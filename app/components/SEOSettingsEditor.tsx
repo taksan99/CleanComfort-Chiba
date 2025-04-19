@@ -110,41 +110,64 @@ export default function SEOSettingsEditor() {
     }
   }
 
+  // handleSubmit関数を修正して、より詳細なエラーハンドリングを追加します
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     setError(null)
     try {
-      // handleSubmit関数内のリクエストボディを更新
+      console.log("Submitting SEO settings form...")
+
+      // リクエストボディを作成
+      const requestBody = {
+        googleTagManagerId,
+        googleAnalyticsId,
+        googleSearchConsoleVerification,
+        customHeadTags,
+        googleAnalyticsCode,
+        googleTagManagerBodyCode,
+        // 空の文字列を含めて、undefinedエラーを回避
+        ogImageUrl: "",
+        twitterCardImageUrl: "",
+      }
+
+      console.log("Request body:", JSON.stringify(requestBody))
+
       const response = await fetch("/api/seo-settings", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
         },
-        body: JSON.stringify({
-          googleTagManagerId,
-          googleAnalyticsId,
-          googleSearchConsoleVerification,
-          customHeadTags,
-          googleAnalyticsCode,
-          googleTagManagerBodyCode, // 新しいフィールドを追加
-          // Include these fields with empty strings to avoid undefined errors
-          ogImageUrl: "",
-          twitterCardImageUrl: "",
-        }),
+        body: JSON.stringify(requestBody),
       })
 
-      // Check if the response is JSON
+      console.log("Response status:", response.status)
+
+      // レスポンスの内容を取得
+      let data
       const contentType = response.headers.get("content-type")
-      if (!contentType || !contentType.includes("application/json")) {
-        throw new Error(`Expected JSON response but got ${contentType}. Status: ${response.status}`)
+
+      try {
+        if (contentType && contentType.includes("application/json")) {
+          data = await response.json()
+          console.log("Response data:", data)
+        } else {
+          const text = await response.text()
+          console.error("Non-JSON response:", text)
+          throw new Error(`Expected JSON response but got ${contentType}. Status: ${response.status}`)
+        }
+      } catch (parseError) {
+        console.error("Error parsing response:", parseError)
+        throw new Error(
+          `Failed to parse response: ${parseError instanceof Error ? parseError.message : String(parseError)}`,
+        )
       }
 
-      const data = await response.json()
-
       if (!response.ok) {
-        throw new Error(data.error || data.details || `HTTP error! status: ${response.status}`)
+        const errorMessage = data?.error || data?.message || data?.details || `HTTP error! status: ${response.status}`
+        console.error("Error response:", errorMessage)
+        throw new Error(errorMessage)
       }
 
       toast({
@@ -153,10 +176,12 @@ export default function SEOSettingsEditor() {
       })
     } catch (error) {
       console.error("Error saving SEO settings:", error)
-      setError(`SEO設定の保存中にエラーが発生しました: ${error instanceof Error ? error.message : String(error)}`)
+      const errorMessage = error instanceof Error ? error.message : "不明なエラーが発生しました"
+
+      setError(`SEO設定の保存中にエラーが発生しました: ${errorMessage}`)
       toast({
         title: "エラー",
-        description: `SEO設定の保存中にエラーが発生しました。`,
+        description: `SEO設定の保存中にエラーが発生しました: ${errorMessage}`,
         variant: "destructive",
       })
     } finally {
