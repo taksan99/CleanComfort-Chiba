@@ -30,11 +30,11 @@ const nextConfig = {
             key: "Content-Security-Policy",
             value:
               "default-src 'self'; " +
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://*.doubleclick.net https://googleads.g.doubleclick.net https://*.google.com https://*.google.co.jp; " +
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://*.doubleclick.net https://googleads.g.doubleclick.net https://*.google.com https://*.google.co.jp https://google.com; " +
               "style-src 'self' 'unsafe-inline'; " +
-              "img-src 'self' data: https://www.google-analytics.com https://*.amazonaws.com https://*.google.com https://*.google.co.jp https://*.doubleclick.net https://www.googleadservices.com; " +
-              "connect-src 'self' https://www.google-analytics.com https://*.doubleclick.net https://*.google.com https://*.google.co.jp https://googleads.g.doubleclick.net; " +
-              "frame-src 'self' https://*.doubleclick.net https://www.googletagmanager.com https://*.google.com https://*.google.co.jp;",
+              "img-src 'self' data: https://www.google-analytics.com https://*.amazonaws.com https://*.google.com https://*.google.co.jp https://*.doubleclick.net https://www.googleadservices.com https://google.com; " +
+              "connect-src 'self' https://www.google-analytics.com https://*.doubleclick.net https://*.google.com https://*.google.co.jp https://googleads.g.doubleclick.net https://google.com; " +
+              "frame-src 'self' https://*.doubleclick.net https://www.googletagmanager.com https://*.google.com https://*.google.co.jp https://google.com;",
           },
           {
             key: "Cache-Control",
