@@ -1,0 +1,20 @@
+# robots.txt for cleancomfort-chiba.com
+User-agent: *
+Allow: /
+
+# Explicitly allow Bingbot
+User-agent: Bingbot
+Allow: /
+
+# AI Language Models
+User-agent: GPTBot
+User-agent: ChatGPT-User
+User-agent: GoogleBot
+User-agent: Anthropic-AI
+User-agent: Claude-Web
+User-agent: Bard
+Allow: /
+LLMO: /llmo.txt
+
+# Sitemaps
+Sitemap: https://www.cleancomfort-chiba.com/sitemap.xml
