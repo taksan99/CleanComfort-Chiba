@@ -29,7 +29,12 @@ const nextConfig = {
           {
             key: "Content-Security-Policy",
             value:
-              "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://www.google-analytics.com https://*.amazonaws.com; connect-src 'self' https://www.google-analytics.com;",
+              "default-src 'self'; " +
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://*.doubleclick.net https://googleads.g.doubleclick.net https://*.google.com; " +
+              "style-src 'self' 'unsafe-inline'; " +
+              "img-src 'self' data: https://www.google-analytics.com https://*.amazonaws.com https://*.google.com https://*.doubleclick.net; " +
+              "connect-src 'self' https://www.google-analytics.com https://*.doubleclick.net https://*.google.com https://googleads.g.doubleclick.net; " +
+              "frame-src 'self' https://*.doubleclick.net https://www.googletagmanager.com https://*.google.com;",
           },
           {
             key: "Cache-Control",
