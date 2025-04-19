@@ -9,17 +9,17 @@ const nextConfig = {
     minimumCacheTTL: 60 * 60 * 24 * 7, // 1週間のキャッシュ
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
-    unoptimized: true, // 追加: 画像の最適化を無効化
+    unoptimized: true, // 画像の最適化を無効化
   },
   experimental: {
-    optimizeCss: true,
+    // optimizeCss: true, // この行を削除または無効化
     optimizeServerReact: true,
   },
   eslint: {
-    ignoreDuringBuilds: true, // 追加: ビルド時のESLintエラーを無視
+    ignoreDuringBuilds: true, // ビルド時のESLintエラーを無視
   },
   typescript: {
-    ignoreBuildErrors: true, // 追加: ビルド時のTypeScriptエラーを無視
+    ignoreBuildErrors: true, // ビルド時のTypeScriptエラーを無視
   },
   async headers() {
     return [
