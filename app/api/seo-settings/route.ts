@@ -59,10 +59,20 @@ async function checkColumnExists(columnName: string) {
 // カラムを追加する関数
 async function addColumn(columnName: string) {
   try {
-    await sql`
-      ALTER TABLE seo_settings
-      ADD COLUMN IF NOT EXISTS ${sql(columnName)} TEXT
-    `
+    // SQLインジェクションを防ぐために、カラム名を直接埋め込まないようにする
+    if (columnName === "google_tag_manager_body_code") {
+      await sql`
+        ALTER TABLE seo_settings
+        ADD COLUMN IF NOT EXISTS google_tag_manager_body_code TEXT
+      `
+    } else if (columnName === "google_analytics_code") {
+      await sql`
+        ALTER TABLE seo_settings
+        ADD COLUMN IF NOT EXISTS google_analytics_code TEXT
+      `
+    } else {
+      throw new Error(`Invalid column name: ${columnName}`)
+    }
     return true
   } catch (error) {
     console.error(`Error adding column ${columnName}:`, error)
@@ -75,49 +85,110 @@ export async function GET() {
     console.log("SEO settings GET request received")
 
     // テーブルが存在するか確認
-    const tableExists = await checkTableExists()
-    console.log(`SEO settings table exists: ${tableExists}`)
+    let tableExists = false
+    try {
+      tableExists = await checkTableExists()
+      console.log(`SEO settings table exists: ${tableExists}`)
+    } catch (error) {
+      console.error("Error checking if table exists:", error)
+      return NextResponse.json(
+        {
+          error: "Failed to check if table exists",
+          message: error instanceof Error ? error.message : String(error),
+          timestamp: new Date().toISOString(),
+        },
+        { status: 500 },
+      )
+    }
 
     // テーブルが存在しない場合は作成
     if (!tableExists) {
-      console.log("Creating seo_settings table")
-      await createTable()
-      console.log("SEO settings table created successfully")
+      try {
+        console.log("Creating seo_settings table")
+        await createTable()
+        console.log("SEO settings table created successfully")
+      } catch (error) {
+        console.error("Error creating table:", error)
+        return NextResponse.json(
+          {
+            error: "Failed to create SEO settings table",
+            message: error instanceof Error ? error.message : String(error),
+            timestamp: new Date().toISOString(),
+          },
+          { status: 500 },
+        )
+      }
     }
 
-    // google_tag_manager_body_codeカラムが存在するか確認
-    const columnExists = await checkColumnExists("google_tag_manager_body_code")
-    console.log(`google_tag_manager_body_code column exists: ${columnExists}`)
+    // 必要なカラムが存在するか確認
+    try {
+      // google_tag_manager_body_codeカラムが存在するか確認
+      const bodyCodeColumnExists = await checkColumnExists("google_tag_manager_body_code")
+      console.log(`google_tag_manager_body_code column exists: ${bodyCodeColumnExists}`)
 
-    // カラムが存在しない場合は追加
-    if (!columnExists) {
-      console.log("Adding google_tag_manager_body_code column")
-      await addColumn("google_tag_manager_body_code")
-      console.log("google_tag_manager_body_code column added successfully")
+      // カラムが存在しない場合は追加
+      if (!bodyCodeColumnExists) {
+        console.log("Adding google_tag_manager_body_code column")
+        await addColumn("google_tag_manager_body_code")
+        console.log("google_tag_manager_body_code column added successfully")
+      }
+
+      // google_analytics_codeカラムが存在するか確認
+      const analyticsCodeColumnExists = await checkColumnExists("google_analytics_code")
+      console.log(`google_analytics_code column exists: ${analyticsCodeColumnExists}`)
+
+      // カラムが存在しない場合は追加
+      if (!analyticsCodeColumnExists) {
+        console.log("Adding google_analytics_code column")
+        await addColumn("google_analytics_code")
+        console.log("google_analytics_code column added successfully")
+      }
+    } catch (error) {
+      console.error("Error checking or adding columns:", error)
+      return NextResponse.json(
+        {
+          error: "Failed to check or add columns",
+          message: error instanceof Error ? error.message : String(error),
+          timestamp: new Date().toISOString(),
+        },
+        { status: 500 },
+      )
     }
 
     // テーブルをクエリ
-    console.log("Querying SEO settings")
-    const result = await sql`
-      SELECT * FROM seo_settings
-      WHERE id = 1
-    `
+    try {
+      console.log("Querying SEO settings")
+      const result = await sql`
+        SELECT * FROM seo_settings
+        WHERE id = 1
+      `
 
-    console.log(`SEO settings query result: ${result.rows.length} rows`)
+      console.log(`SEO settings query result: ${result.rows.length} rows`)
 
-    // 結果を返す
-    return NextResponse.json(result.rows[0] || {}, {
-      headers: {
-        "Content-Type": "application/json",
-      },
-    })
+      // 結果を返す
+      return NextResponse.json(result.rows[0] || {}, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+    } catch (error) {
+      console.error("Error querying SEO settings:", error)
+      return NextResponse.json(
+        {
+          error: "Failed to query SEO settings",
+          message: error instanceof Error ? error.message : String(error),
+          timestamp: new Date().toISOString(),
+        },
+        { status: 500 },
+      )
+    }
   } catch (error) {
-    console.error("SEO settings GET error:", error)
+    console.error("Unhandled error in SEO settings GET:", error)
 
     // JSONエラーレスポンスを返す
     return NextResponse.json(
       {
-        error: "Failed to fetch SEO settings",
+        error: "Unhandled error in SEO settings GET",
         message: error instanceof Error ? error.message : String(error),
         timestamp: new Date().toISOString(),
       },
@@ -170,75 +241,150 @@ export async function POST(request: Request) {
     console.log("Extracted fields from request body")
 
     // テーブルが存在するか確認
-    const tableExists = await checkTableExists()
-    console.log(`SEO settings table exists: ${tableExists}`)
+    let tableExists = false
+    try {
+      tableExists = await checkTableExists()
+      console.log(`SEO settings table exists: ${tableExists}`)
+    } catch (error) {
+      console.error("Error checking if table exists:", error)
+      return NextResponse.json(
+        {
+          error: "Failed to check if table exists",
+          message: error instanceof Error ? error.message : String(error),
+          timestamp: new Date().toISOString(),
+        },
+        { status: 500 },
+      )
+    }
 
     // テーブルが存在しない場合は作成
     if (!tableExists) {
-      console.log("Creating seo_settings table")
-      await createTable()
-      console.log("SEO settings table created successfully")
+      try {
+        console.log("Creating seo_settings table")
+        await createTable()
+        console.log("SEO settings table created successfully")
+      } catch (error) {
+        console.error("Error creating table:", error)
+        return NextResponse.json(
+          {
+            error: "Failed to create SEO settings table",
+            message: error instanceof Error ? error.message : String(error),
+            timestamp: new Date().toISOString(),
+          },
+          { status: 500 },
+        )
+      }
     }
 
-    // google_tag_manager_body_codeカラムが存在するか確認
-    const columnExists = await checkColumnExists("google_tag_manager_body_code")
-    console.log(`google_tag_manager_body_code column exists: ${columnExists}`)
+    // 必要なカラムが存在するか確認
+    try {
+      // google_tag_manager_body_codeカラムが存在するか確認
+      const bodyCodeColumnExists = await checkColumnExists("google_tag_manager_body_code")
+      console.log(`google_tag_manager_body_code column exists: ${bodyCodeColumnExists}`)
 
-    // カラムが存在しない場合は追加
-    if (!columnExists) {
-      console.log("Adding google_tag_manager_body_code column")
-      await addColumn("google_tag_manager_body_code")
-      console.log("google_tag_manager_body_code column added successfully")
+      // カラムが存在しない場合は追加
+      if (!bodyCodeColumnExists) {
+        console.log("Adding google_tag_manager_body_code column")
+        await addColumn("google_tag_manager_body_code")
+        console.log("google_tag_manager_body_code column added successfully")
+      }
+
+      // google_analytics_codeカラムが存在するか確認
+      const analyticsCodeColumnExists = await checkColumnExists("google_analytics_code")
+      console.log(`google_analytics_code column exists: ${analyticsCodeColumnExists}`)
+
+      // カラムが存在しない場合は追加
+      if (!analyticsCodeColumnExists) {
+        console.log("Adding google_analytics_code column")
+        await addColumn("google_analytics_code")
+        console.log("google_analytics_code column added successfully")
+      }
+    } catch (error) {
+      console.error("Error checking or adding columns:", error)
+      return NextResponse.json(
+        {
+          error: "Failed to check or add columns",
+          message: error instanceof Error ? error.message : String(error),
+          timestamp: new Date().toISOString(),
+        },
+        { status: 500 },
+      )
     }
 
     // レコードが存在するか確認
-    const recordCheck = await sql`
-      SELECT EXISTS (
-        SELECT FROM seo_settings
-        WHERE id = 1
-      ) as exists
-    `
-    const recordExists = recordCheck.rows[0]?.exists
-    console.log(`SEO settings record exists: ${recordExists}`)
+    let recordExists = false
+    try {
+      const recordCheck = await sql`
+        SELECT EXISTS (
+          SELECT FROM seo_settings
+          WHERE id = 1
+        ) as exists
+      `
+      recordExists = recordCheck.rows[0]?.exists
+      console.log(`SEO settings record exists: ${recordExists}`)
+    } catch (error) {
+      console.error("Error checking if record exists:", error)
+      return NextResponse.json(
+        {
+          error: "Failed to check if record exists",
+          message: error instanceof Error ? error.message : String(error),
+          timestamp: new Date().toISOString(),
+        },
+        { status: 500 },
+      )
+    }
 
     // 更新または挿入
-    if (recordExists) {
-      console.log("Updating existing SEO settings record")
-      await sql`
-        UPDATE seo_settings
-        SET 
-          google_tag_manager_id = ${googleTagManagerId || ""},
-          google_analytics_id = ${googleAnalyticsId || ""},
-          google_search_console_verification = ${googleSearchConsoleVerification || ""},
-          custom_head_tags = ${customHeadTags || ""},
-          google_analytics_code = ${googleAnalyticsCode || ""},
-          google_tag_manager_body_code = ${googleTagManagerBodyCode || ""},
-          updated_at = CURRENT_TIMESTAMP
-        WHERE id = 1
-      `
-    } else {
-      console.log("Inserting new SEO settings record")
-      await sql`
-        INSERT INTO seo_settings (
-          id,
-          google_tag_manager_id,
-          google_analytics_id,
-          google_search_console_verification,
-          custom_head_tags,
-          google_analytics_code,
-          google_tag_manager_body_code
-        ) VALUES (
-          1,
-          ${googleTagManagerId || ""},
-          ${googleAnalyticsId || ""},
-          ${googleSearchConsoleVerification || ""},
-          ${customHeadTags || ""},
-          ${googleAnalyticsCode || ""},
-          ${googleTagManagerBodyCode || ""}
-        )
-      `
+    try {
+      if (recordExists) {
+        console.log("Updating existing SEO settings record")
+        await sql`
+          UPDATE seo_settings
+          SET 
+            google_tag_manager_id = ${googleTagManagerId || ""},
+            google_analytics_id = ${googleAnalyticsId || ""},
+            google_search_console_verification = ${googleSearchConsoleVerification || ""},
+            custom_head_tags = ${customHeadTags || ""},
+            google_analytics_code = ${googleAnalyticsCode || ""},
+            google_tag_manager_body_code = ${googleTagManagerBodyCode || ""},
+            updated_at = CURRENT_TIMESTAMP
+          WHERE id = 1
+        `
+      } else {
+        console.log("Inserting new SEO settings record")
+        await sql`
+          INSERT INTO seo_settings (
+            id,
+            google_tag_manager_id,
+            google_analytics_id,
+            google_search_console_verification,
+            custom_head_tags,
+            google_analytics_code,
+            google_tag_manager_body_code
+          ) VALUES (
+            1,
+            ${googleTagManagerId || ""},
+            ${googleAnalyticsId || ""},
+            ${googleSearchConsoleVerification || ""},
+            ${customHeadTags || ""},
+            ${googleAnalyticsCode || ""},
+            ${googleTagManagerBodyCode || ""}
+          )
+        `
+      }
+      console.log("SEO settings saved successfully")
+    } catch (error) {
+      console.error("Error saving SEO settings:", error)
+      return NextResponse.json(
+        {
+          error: "Failed to save SEO settings",
+          message: error instanceof Error ? error.message : String(error),
+          details: error instanceof Error ? error.stack : "No stack trace available",
+          timestamp: new Date().toISOString(),
+        },
+        { status: 500 },
+      )
     }
-    console.log("SEO settings saved successfully")
 
     // 成功レスポンスを返す
     return NextResponse.json(
@@ -254,12 +400,12 @@ export async function POST(request: Request) {
       },
     )
   } catch (error) {
-    console.error("SEO settings POST error:", error)
+    console.error("Unhandled error in SEO settings POST:", error)
 
     // JSONエラーレスポンスを返す
     return NextResponse.json(
       {
-        error: "Failed to save SEO settings",
+        error: "Unhandled error in SEO settings POST",
         message: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : "No stack trace available",
         timestamp: new Date().toISOString(),

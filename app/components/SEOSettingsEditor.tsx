@@ -8,12 +8,11 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "@/components/ui/use-toast"
-import { Upload, AlertCircle } from "lucide-react"
+import { Upload, AlertCircle, RefreshCw } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 export default function SEOSettingsEditor() {
   const [googleTagManagerId, setGoogleTagManagerId] = useState("")
-  // 状態変数を追加
   const [googleTagManagerBodyCode, setGoogleTagManagerBodyCode] = useState("")
   const [googleAnalyticsId, setGoogleAnalyticsId] = useState("")
   const [googleSearchConsoleVerification, setGoogleSearchConsoleVerification] = useState("")
@@ -25,30 +24,58 @@ export default function SEOSettingsEditor() {
   const [faviconFile, setFaviconFile] = useState<File | null>(null)
   const [isUploadingFavicon, setIsUploadingFavicon] = useState(false)
   const [currentFaviconUrl, setCurrentFaviconUrl] = useState<string | null>(null)
+  const [isRetrying, setIsRetrying] = useState(false)
 
   useEffect(() => {
     fetchSEOSettings()
     fetchCurrentFavicon()
   }, [])
 
-  // Update the fetchSEOSettings function to handle errors better
   const fetchSEOSettings = async () => {
     setIsFetching(true)
     setError(null)
     try {
       console.log("Fetching SEO settings...")
-      const response = await fetch("/api/db-diagnostic")
 
-      // First check database connectivity
-      if (!response.ok) {
-        console.error("Database diagnostic failed:", response.status)
-        throw new Error(`Database connection check failed: ${response.status}`)
+      // まずデータベース接続を確認
+      const dbResponse = await fetch("/api/db-diagnostic", {
+        headers: {
+          Accept: "application/json",
+          "Cache-Control": "no-cache",
+        },
+      })
+
+      if (!dbResponse.ok) {
+        const dbErrorText = await dbResponse.text()
+        console.error("Database diagnostic failed:", dbErrorText)
+        throw new Error(`Database connection check failed: ${dbResponse.status}. ${dbErrorText}`)
       }
 
-      const dbStatus = await response.json()
+      const dbStatus = await dbResponse.json()
       console.log("Database status:", dbStatus)
 
-      // Now fetch SEO settings
+      // テーブル構造を更新
+      try {
+        const schemaResponse = await fetch("/api/update-seo-settings-schema", {
+          headers: {
+            Accept: "application/json",
+            "Cache-Control": "no-cache",
+          },
+        })
+
+        if (schemaResponse.ok) {
+          const schemaData = await schemaResponse.json()
+          console.log("Schema update result:", schemaData)
+        } else {
+          const schemaErrorText = await schemaResponse.text()
+          console.warn("Schema update warning:", schemaErrorText)
+        }
+      } catch (schemaError) {
+        console.warn("Schema update error:", schemaError)
+        // スキーマ更新エラーは無視して続行
+      }
+
+      // SEO設定を取得
       const settingsResponse = await fetch("/api/seo-settings", {
         headers: {
           Accept: "application/json",
@@ -56,14 +83,14 @@ export default function SEOSettingsEditor() {
         },
       })
 
-      // Try to parse as JSON, but handle text response too
+      // レスポンスの内容を取得
       let data
       const contentType = settingsResponse.headers.get("content-type") || ""
 
       if (contentType.includes("application/json")) {
         data = await settingsResponse.json()
       } else {
-        // If not JSON, get the text and log it for debugging
+        // JSONでない場合はテキストを取得してエラーとして扱う
         const text = await settingsResponse.text()
         console.error("Received non-JSON response:", text.substring(0, 500))
         throw new Error(`Expected JSON response but got ${contentType}. Status: ${settingsResponse.status}`)
@@ -73,14 +100,13 @@ export default function SEOSettingsEditor() {
         throw new Error(data.error || data.message || `HTTP error! status: ${settingsResponse.status}`)
       }
 
-      // Set state with data, using empty strings as fallbacks
-      // fetchSEOSettings関数内のデータ設定部分を更新
+      // 状態を更新
       setGoogleTagManagerId(data.google_tag_manager_id || "")
       setGoogleAnalyticsId(data.google_analytics_id || "")
       setGoogleSearchConsoleVerification(data.google_search_console_verification || "")
       setCustomHeadTags(data.custom_head_tags || "")
       setGoogleAnalyticsCode(data.google_analytics_code || "")
-      setGoogleTagManagerBodyCode(data.google_tag_manager_body_code || "") // 新しいフィールドを追加
+      setGoogleTagManagerBodyCode(data.google_tag_manager_body_code || "")
 
       console.log("SEO settings loaded successfully")
     } catch (error) {
@@ -93,6 +119,7 @@ export default function SEOSettingsEditor() {
       })
     } finally {
       setIsFetching(false)
+      setIsRetrying(false)
     }
   }
 
@@ -110,7 +137,6 @@ export default function SEOSettingsEditor() {
     }
   }
 
-  // handleSubmit関数を修正して、より詳細なエラーハンドリングを追加します
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
@@ -126,9 +152,6 @@ export default function SEOSettingsEditor() {
         customHeadTags,
         googleAnalyticsCode,
         googleTagManagerBodyCode,
-        // 空の文字列を含めて、undefinedエラーを回避
-        ogImageUrl: "",
-        twitterCardImageUrl: "",
       }
 
       console.log("Request body:", JSON.stringify(requestBody))
@@ -228,6 +251,11 @@ export default function SEOSettingsEditor() {
     }
   }
 
+  const handleRetry = () => {
+    setIsRetrying(true)
+    fetchSEOSettings()
+  }
+
   if (isFetching) {
     return <div>SEO設定を読み込み中...</div>
   }
@@ -239,10 +267,13 @@ export default function SEOSettingsEditor() {
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>エラー</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
+          <Button variant="outline" size="sm" className="mt-2" onClick={handleRetry} disabled={isRetrying}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            {isRetrying ? "再試行中..." : "再試行"}
+          </Button>
         </Alert>
       )}
 
-      {/* フォーム内に新しい入力欄を追加（Google Tag Manager IDの入力欄の後に追加） */}
       <div>
         <Label htmlFor="googleTagManagerId">Google Tag Manager ID</Label>
         <Input
@@ -259,6 +290,7 @@ export default function SEOSettingsEditor() {
           value={googleTagManagerBodyCode}
           onChange={(e) => setGoogleTagManagerBodyCode(e.target.value)}
           placeholder={`<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com  Google Tag Manager (noscript) -->
 <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-XXXXXXX"
 height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <!-- End Google Tag Manager (noscript) -->`}
