@@ -7,7 +7,7 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   images: {
-    domains: ["localhost", "vercel.app", "cleancomfortchiba.vercel.app"],
+    domains: ["localhost", "vercel.app", "cleancomfort-chiba.vercel.app"],
     remotePatterns: [
       {
         protocol: "https",
@@ -23,22 +23,20 @@ const nextConfig = {
         headers: [
           {
             key: "Content-Security-Policy",
-            value: `
-              default-src 'self';
-              script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com;
-              style-src 'self' 'unsafe-inline';
-              img-src 'self' data: blob: https: https://www.google-analytics.com https://www.googletagmanager.com;
-              font-src 'self' data:;
-              connect-src 'self' https://www.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com;
-              frame-src 'self';
-              object-src 'none';
-              base-uri 'self';
-              form-action 'self';
-              frame-ancestors 'none';
-              upgrade-insecure-requests;
-            `
-              .replace(/\s+/g, " ")
-              .trim(),
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com https://vercel.live",
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+              "img-src 'self' data: blob: https: https://www.googletagmanager.com https://www.google-analytics.com",
+              "font-src 'self' https://fonts.gstatic.com",
+              "connect-src 'self' https://www.googletagmanager.com https://*.analytics.google.com https://vercel.live wss://ws-us3.pusher.com",
+              "frame-src 'self' https://vercel.live",
+              "object-src 'none'",
+              "base-uri 'self'",
+              "form-action 'self'",
+              "frame-ancestors 'none'",
+              "upgrade-insecure-requests",
+            ].join("; "),
           },
           {
             key: "X-Frame-Options",
@@ -50,7 +48,11 @@ const nextConfig = {
           },
           {
             key: "Referrer-Policy",
-            value: "origin-when-cross-origin",
+            value: "strict-origin-when-cross-origin",
+          },
+          {
+            key: "Permissions-Policy",
+            value: "camera=(), microphone=(), geolocation=()",
           },
         ],
       },

@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server"
+import { type NextRequest, NextResponse } from "next/server"
 import { sql } from "@vercel/postgres"
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const section = searchParams.get("section")
@@ -11,24 +11,21 @@ export async function GET(request: Request) {
     }
 
     const result = await sql`
-      SELECT content FROM site_content 
-      WHERE section = ${section}
-      ORDER BY updated_at DESC 
-      LIMIT 1
+      SELECT content FROM site_content WHERE section = ${section}
     `
 
     if (result.rows.length === 0) {
       return NextResponse.json({ content: null })
     }
 
-    return NextResponse.json({ content: JSON.parse(result.rows[0].content) })
+    return NextResponse.json({ content: result.rows[0].content })
   } catch (error) {
     console.error("Error fetching content:", error)
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
+    return NextResponse.json({ error: "Failed to fetch content" }, { status: 500 })
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const { section, content } = await request.json()
 
@@ -36,19 +33,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Section and content are required" }, { status: 400 })
     }
 
-    // Insert or update content
+    // Upsert the content
     await sql`
       INSERT INTO site_content (section, content, updated_at)
       VALUES (${section}, ${JSON.stringify(content)}, NOW())
-      ON CONFLICT (section) 
-      DO UPDATE SET 
-        content = ${JSON.stringify(content)},
-        updated_at = NOW()
+      ON CONFLICT (section)
+      DO UPDATE SET content = ${JSON.stringify(content)}, updated_at = NOW()
     `
 
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error("Error saving content:", error)
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
+    return NextResponse.json({ error: "Failed to save content" }, { status: 500 })
   }
 }
