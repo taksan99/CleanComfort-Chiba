@@ -2,13 +2,14 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { CheckCircle, AlertCircle, Database, RefreshCw } from "lucide-react"
+import { CheckCircle, XCircle, Database, RefreshCw } from "lucide-react"
 
-export default function DatabaseManagement() {
+export default function DatabasePage() {
   const [isLoading, setIsLoading] = useState(false)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
+  const [dbStatus, setDbStatus] = useState<string | null>(null)
 
   const initializeDatabase = async () => {
     setIsLoading(true)
@@ -25,20 +26,14 @@ export default function DatabaseManagement() {
       const data = await response.json()
 
       if (response.ok) {
-        setMessage({
-          type: "success",
-          text: `データベースの初期化が完了しました。${data.message}`,
-        })
+        setMessage({ type: "success", text: "データベースが正常に初期化されました！" })
       } else {
-        setMessage({
-          type: "error",
-          text: `エラー: ${data.error || "Unknown error"}`,
-        })
+        setMessage({ type: "error", text: `エラー: ${data.error || "初期化に失敗しました"}` })
       }
     } catch (error) {
       setMessage({
         type: "error",
-        text: `接続エラー: ${error instanceof Error ? error.message : "Unknown error"}`,
+        text: `ネットワークエラー: ${error instanceof Error ? error.message : "不明なエラー"}`,
       })
     } finally {
       setIsLoading(false)
@@ -47,27 +42,45 @@ export default function DatabaseManagement() {
 
   const checkDatabaseStatus = async () => {
     setIsLoading(true)
+    setDbStatus(null)
+
+    try {
+      const response = await fetch("/api/db-status")
+      const data = await response.json()
+
+      if (response.ok) {
+        setDbStatus(`接続成功: ${data.message || "データベースは正常に動作しています"}`)
+      } else {
+        setDbStatus(`接続エラー: ${data.error || "データベースに接続できません"}`)
+      }
+    } catch (error) {
+      setDbStatus(`ネットワークエラー: ${error instanceof Error ? error.message : "不明なエラー"}`)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const testContentAPI = async () => {
+    setIsLoading(true)
     setMessage(null)
 
     try {
-      const response = await fetch("/api/content?section=hero")
+      // Test fetching content
+      const response = await fetch("/api/content?section=valueProposition")
       const data = await response.json()
 
       if (response.ok) {
         setMessage({
           type: "success",
-          text: "データベース接続は正常です。コンテンツテーブルが利用可能です。",
+          text: `コンテンツAPI テスト成功: ${data.content ? "データが見つかりました" : "データが見つかりません"}`,
         })
       } else {
-        setMessage({
-          type: "error",
-          text: "データベーステーブルが見つかりません。初期化が必要です。",
-        })
+        setMessage({ type: "error", text: `コンテンツAPI エラー: ${data.error}` })
       }
     } catch (error) {
       setMessage({
         type: "error",
-        text: `データベース接続エラー: ${error instanceof Error ? error.message : "Unknown error"}`,
+        text: `API テストエラー: ${error instanceof Error ? error.message : "不明なエラー"}`,
       })
     } finally {
       setIsLoading(false)
@@ -75,11 +88,8 @@ export default function DatabaseManagement() {
   }
 
   return (
-    <div className="container mx-auto p-6 max-w-4xl">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">データベース管理</h1>
-        <p className="text-gray-600">サイトコンテンツのデータベーステーブルを管理します。</p>
-      </div>
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold mb-8">データベース管理</h1>
 
       <div className="grid gap-6">
         <Card>
@@ -88,31 +98,34 @@ export default function DatabaseManagement() {
               <Database className="h-5 w-5" />
               データベース初期化
             </CardTitle>
-            <CardDescription>コンテンツテーブルを作成し、デフォルトデータを挿入します。</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex gap-4">
-              <Button onClick={initializeDatabase} disabled={isLoading} className="flex items-center gap-2">
-                {isLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
-                データベースを初期化
-              </Button>
+            <p className="text-gray-600">
+              コンテンツ管理用のデータベーステーブルを作成し、デフォルトデータを挿入します。
+            </p>
 
-              <Button
-                variant="outline"
-                onClick={checkDatabaseStatus}
-                disabled={isLoading}
-                className="flex items-center gap-2 bg-transparent"
-              >
-                {isLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <AlertCircle className="h-4 w-4" />}
-                接続状況を確認
-              </Button>
-            </div>
+            <Button onClick={initializeDatabase} disabled={isLoading} className="w-full">
+              {isLoading ? (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                  初期化中...
+                </>
+              ) : (
+                <>
+                  <Database className="mr-2 h-4 w-4" />
+                  データベースを初期化
+                </>
+              )}
+            </Button>
 
             {message && (
-              <Alert
-                className={message.type === "success" ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"}
-              >
-                <AlertDescription className={message.type === "success" ? "text-green-800" : "text-red-800"}>
+              <Alert className={message.type === "success" ? "border-green-500" : "border-red-500"}>
+                {message.type === "success" ? (
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                ) : (
+                  <XCircle className="h-4 w-4 text-red-500" />
+                )}
+                <AlertDescription className={message.type === "success" ? "text-green-700" : "text-red-700"}>
                   {message.text}
                 </AlertDescription>
               </Alert>
@@ -122,26 +135,67 @@ export default function DatabaseManagement() {
 
         <Card>
           <CardHeader>
+            <CardTitle>データベース接続テスト</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-gray-600">データベースへの接続状況を確認します。</p>
+
+            <Button
+              onClick={checkDatabaseStatus}
+              disabled={isLoading}
+              variant="outline"
+              className="w-full bg-transparent"
+            >
+              {isLoading ? (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                  確認中...
+                </>
+              ) : (
+                "接続状況を確認"
+              )}
+            </Button>
+
+            {dbStatus && (
+              <Alert>
+                <AlertDescription>{dbStatus}</AlertDescription>
+              </Alert>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>コンテンツAPI テスト</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-gray-600">コンテンツ取得APIの動作を確認します。</p>
+
+            <Button onClick={testContentAPI} disabled={isLoading} variant="outline" className="w-full bg-transparent">
+              {isLoading ? (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                  テスト中...
+                </>
+              ) : (
+                "コンテンツAPI をテスト"
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
             <CardTitle>使用方法</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="text-sm text-gray-600">
-              <h4 className="font-medium mb-2">初回セットアップ:</h4>
-              <ol className="list-decimal list-inside space-y-1 ml-4">
-                <li>「データベースを初期化」ボタンをクリック</li>
-                <li>成功メッセージを確認</li>
-                <li>管理者ページでコンテンツ編集を開始</li>
-              </ol>
-            </div>
-
-            <div className="text-sm text-gray-600">
-              <h4 className="font-medium mb-2">トラブルシューティング:</h4>
-              <ul className="list-disc list-inside space-y-1 ml-4">
-                <li>「接続状況を確認」で現在の状態をチェック</li>
-                <li>エラーが発生した場合は再度初期化を実行</li>
-                <li>問題が続く場合は環境変数を確認</li>
-              </ul>
-            </div>
+          <CardContent>
+            <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600">
+              <li>まず「データベースを初期化」ボタンをクリックしてテーブルを作成</li>
+              <li>「接続状況を確認」でデータベース接続をテスト</li>
+              <li>「コンテンツAPI をテスト」でAPI動作を確認</li>
+              <li>管理者ページ（/admin）でコンテンツを編集</li>
+              <li>別のブラウザで変更が反映されることを確認</li>
+            </ol>
           </CardContent>
         </Card>
       </div>
