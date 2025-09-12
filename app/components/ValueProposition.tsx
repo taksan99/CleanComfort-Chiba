@@ -62,18 +62,25 @@ export default function ValueProposition() {
   const { imageUrls, isLoading, error } = useImageUrls()
 
   useEffect(() => {
-    const savedValueProps = localStorage.getItem("valuePropositionContent")
-    if (savedValueProps) {
-      const parsedValueProps = JSON.parse(savedValueProps) as ValueProp[]
-      setValueProps(
-        parsedValueProps.map((prop, index) => ({
-          ...prop,
-          icon: initialValueProps[index].icon,
-          color: initialValueProps[index].color,
-        })),
-      )
-    }
+    fetchContent()
   }, [])
+
+  const fetchContent = async () => {
+    try {
+      const response = await fetch("/api/content?section=valueProposition")
+      const data = await response.json()
+      if (data.content) {
+        // 初期データの構造を保持しながらコンテンツを更新
+        const updatedValueProps = initialValueProps.map((initialProp, index) => ({
+          ...initialProp,
+          ...data.content[index],
+        }))
+        setValueProps(updatedValueProps)
+      }
+    } catch (error) {
+      console.error("Error fetching content:", error)
+    }
+  }
 
   if (isLoading) {
     return <div>Loading...</div>

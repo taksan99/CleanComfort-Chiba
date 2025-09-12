@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useToast } from "@/components/ui/use-toast"
 
 interface ValueProp {
   title: string
@@ -43,13 +44,24 @@ const initialValueProps: ValueProp[] = [
 
 export default function ValuePropositionEditor() {
   const [valueProps, setValueProps] = useState<ValueProp[]>(initialValueProps)
+  const [isLoading, setIsLoading] = useState(false)
+  const { toast } = useToast()
 
   useEffect(() => {
-    const savedValueProps = localStorage.getItem("valuePropositionContent")
-    if (savedValueProps) {
-      setValueProps(JSON.parse(savedValueProps))
-    }
+    fetchContent()
   }, [])
+
+  const fetchContent = async () => {
+    try {
+      const response = await fetch("/api/content?section=valueProposition")
+      const data = await response.json()
+      if (data.content) {
+        setValueProps(data.content)
+      }
+    } catch (error) {
+      console.error("Error fetching content:", error)
+    }
+  }
 
   const handleChange = (index: number, field: keyof ValueProp, value: string) => {
     const newValueProps = [...valueProps]
@@ -57,9 +69,38 @@ export default function ValuePropositionEditor() {
     setValueProps(newValueProps)
   }
 
-  const handleSave = () => {
-    localStorage.setItem("valuePropositionContent", JSON.stringify(valueProps))
-    alert("4つの幸せな暮らしの内容が保存されました。")
+  const handleSave = async () => {
+    setIsLoading(true)
+    try {
+      const response = await fetch("/api/content", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          section: "valueProposition",
+          content: valueProps,
+        }),
+      })
+
+      if (response.ok) {
+        toast({
+          title: "保存完了",
+          description: "4つの幸せな暮らしの内容が正常に保存されました。",
+        })
+      } else {
+        throw new Error("Failed to save")
+      }
+    } catch (error) {
+      console.error("Error saving content:", error)
+      toast({
+        title: "エラー",
+        description: "保存に失敗しました。",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -119,7 +160,9 @@ export default function ValuePropositionEditor() {
           </TabsContent>
         ))}
       </Tabs>
-      <Button onClick={handleSave}>保存</Button>
+      <Button onClick={handleSave} disabled={isLoading}>
+        {isLoading ? "保存中..." : "保存"}
+      </Button>
     </div>
   )
 }

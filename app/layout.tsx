@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     "llmo-file": "/llmo.txt",
     "llmo-version": "1.0",
   },
-    generator: 'v0.dev'
+    generator: 'v0.app'
 }
 
 async function getSEOSettings() {

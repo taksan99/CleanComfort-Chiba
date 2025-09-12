@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Plus, Trash2, HelpCircle } from "lucide-react"
 import * as LucideIcons from "lucide-react"
+import { useToast } from "@/components/ui/use-toast"
 
 interface ServiceContent {
   title: string
@@ -48,13 +49,24 @@ const iconMap: { [key: string]: keyof typeof LucideIcons } = {
 
 export default function ServiceContentEditor({ initialServices }: ServiceContentEditorProps) {
   const [services, setServices] = useState<ServiceContent[]>(initialServices)
+  const [isLoading, setIsLoading] = useState(false)
+  const { toast } = useToast()
 
   useEffect(() => {
-    const savedServices = localStorage.getItem("serviceContent")
-    if (savedServices) {
-      setServices(JSON.parse(savedServices))
-    }
+    fetchContent()
   }, [])
+
+  const fetchContent = async () => {
+    try {
+      const response = await fetch("/api/content?section=services")
+      const data = await response.json()
+      if (data.content) {
+        setServices(data.content)
+      }
+    } catch (error) {
+      console.error("Error fetching content:", error)
+    }
+  }
 
   const handleServiceChange = (index: number, field: keyof ServiceContent, value: any) => {
     const newServices = [...services]
@@ -85,9 +97,38 @@ export default function ServiceContentEditor({ initialServices }: ServiceContent
     setServices(newServices)
   }
 
-  const handleSave = () => {
-    localStorage.setItem("serviceContent", JSON.stringify(services))
-    alert("サービス内容が保存されました。")
+  const handleSave = async () => {
+    setIsLoading(true)
+    try {
+      const response = await fetch("/api/content", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          section: "services",
+          content: services,
+        }),
+      })
+
+      if (response.ok) {
+        toast({
+          title: "保存完了",
+          description: "サービス内容が正常に保存されました。",
+        })
+      } else {
+        throw new Error("Failed to save")
+      }
+    } catch (error) {
+      console.error("Error saving content:", error)
+      toast({
+        title: "エラー",
+        description: "保存に失敗しました。",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const iconOptions = Object.keys(iconMap).filter((key) => LucideIcons[iconMap[key] as keyof typeof LucideIcons])
@@ -192,7 +233,9 @@ export default function ServiceContentEditor({ initialServices }: ServiceContent
           </TabsContent>
         ))}
       </Tabs>
-      <Button onClick={handleSave}>保存</Button>
+      <Button onClick={handleSave} disabled={isLoading}>
+        {isLoading ? "保存中..." : "保存"}
+      </Button>
     </div>
   )
 }
