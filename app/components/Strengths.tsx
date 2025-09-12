@@ -1,110 +1,124 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Clock, UserCheck, Leaf, Home } from "lucide-react"
-import AnimatedSection from "./AnimatedSection"
-import { useImageUrls } from "@/app/hooks/useImageUrls"
-import ErrorMessage from "./ErrorMessage"
+import { useEffect, useState } from "react"
+import { Card, CardContent } from "@/components/ui/card"
+import { StyledSection } from "./StyledSection"
 
-interface Strength {
+interface StrengthItem {
   title: string
   description: string
-  icon: any
-  color: string
-  iconColor: string
+  icon: string
 }
 
-const strengths = [
-  {
-    title: "翌日対応、365日対応",
-    description: "お急ぎの方も安心。年中無休でサービスを提供しています。",
-    icon: Clock,
-    color: "bg-blue-100 hover:bg-blue-200",
-    iconColor: "text-blue-600",
-  },
-  {
-    title: "経験豊富なプロのスタッフ",
-    description: "熟練のスタッフが丁寧に作業いたします。",
-    icon: UserCheck,
-    color: "bg-green-100 hover:bg-green-200",
-    iconColor: "text-green-600",
-  },
-  {
-    title: "エコフレンドリーな洗剤使用",
-    description: "環境と健康に配慮した安全な洗剤を使用しています。",
-    icon: Leaf,
-    color: "bg-yellow-100 hover:bg-yellow-200",
-    iconColor: "text-yellow-600",
-  },
-  {
-    title: "地域密着で安心",
-    description: "千葉県の地域事情を熟知したスタッフが対応します。",
-    icon: Home,
-    color: "bg-purple-100 hover:bg-purple-200",
-    iconColor: "text-purple-600",
-  },
-]
+interface StrengthsData {
+  title: string
+  subtitle: string
+  items: StrengthItem[]
+}
 
 export default function Strengths() {
-  const [localStrengths, setLocalStrengths] = useState<Strength[]>(strengths)
-  const { imageUrls, isLoading, error } = useImageUrls()
+  const [data, setData] = useState<StrengthsData | null>(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const savedStrengths = localStorage.getItem("strengthsContent")
-    if (savedStrengths) {
-      setLocalStrengths(JSON.parse(savedStrengths))
+    const fetchData = async () => {
+      try {
+        const response = await fetch("/api/content?section=strengths")
+        const result = await response.json()
+        if (result.content) {
+          setData(JSON.parse(result.content))
+        } else {
+          // Fallback default data
+          setData({
+            title: "私たちの強み",
+            subtitle: "選ばれ続ける理由",
+            items: [
+              {
+                title: "千葉県全域対応",
+                description: "千葉県内どこでも迅速にお伺いします",
+                icon: "🌍",
+              },
+              {
+                title: "最短翌日対応",
+                description: "急なご依頼にも柔軟に対応いたします",
+                icon: "⚡",
+              },
+              {
+                title: "エコフレンドリー洗剤",
+                description: "環境と人体に優しい洗剤を使用",
+                icon: "🌱",
+              },
+              {
+                title: "明確な料金体系",
+                description: "追加料金なしの安心価格設定",
+                icon: "💰",
+              },
+              {
+                title: "プロの技術力",
+                description: "経験豊富なスタッフによる高品質サービス",
+                icon: "👨‍🔧",
+              },
+              {
+                title: "アフターフォロー",
+                description: "サービス後のフォローアップも万全",
+                icon: "📞",
+              },
+            ],
+          })
+        }
+      } catch (error) {
+        console.error("Error fetching strengths:", error)
+        setData(null)
+      } finally {
+        setLoading(false)
+      }
     }
+
+    fetchData()
   }, [])
 
-  if (isLoading) {
-    return <div>Loading...</div>
+  if (loading) {
+    return (
+      <StyledSection className="py-20" backgroundImage="strengthsBackgroundImage">
+        <div className="container mx-auto px-4">
+          <div className="text-center">
+            <div className="animate-pulse">
+              <div className="h-8 bg-gray-300 rounded w-1/3 mx-auto mb-4"></div>
+              <div className="h-4 bg-gray-300 rounded w-1/2 mx-auto"></div>
+            </div>
+          </div>
+        </div>
+      </StyledSection>
+    )
   }
 
-  if (error) {
-    return <ErrorMessage message={error.message} />
+  if (!data) {
+    return null
   }
-
-  const backgroundImage = imageUrls.strengthsBackgroundImage?.url || "/placeholder.svg"
 
   return (
-    <section
-      className="relative bg-cover bg-center bg-no-repeat py-16"
-      style={{
-        backgroundImage: `url(${backgroundImage})`,
-        backgroundAttachment: "fixed",
-      }}
-    >
-      <div className="absolute inset-0 bg-black opacity-20"></div>
+    <StyledSection className="py-20" backgroundImage="strengthsBackgroundImage">
       <div className="container mx-auto px-4">
-        <h2 className="text-3xl font-bold text-center mb-12 text-gray-800 bg-white bg-opacity-75 p-4 rounded-lg shadow-lg">
-          私たちの強み
-        </h2>
-        <AnimatedSection>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {strengths.map((strength, index) => (
-              <Card
-                key={index}
-                className={`${strength.color} hover:shadow-lg transition-all duration-300 bg-opacity-90`}
-              >
-                <CardHeader>
-                  <div className="flex justify-center mb-4">
-                    <strength.icon className={`h-12 w-12 ${strength.iconColor}`} />
-                  </div>
-                  <CardTitle className="text-center" style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)" }}>
-                    {strength.title}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-center text-gray-600" style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)" }}>
-                    {strength.description}
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </AnimatedSection>
+        <div className="text-center mb-16">
+          <h2 className="text-4xl font-bold text-gray-800 mb-4">{data.title}</h2>
+          <p className="text-xl text-gray-600">{data.subtitle}</p>
+        </div>
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {data.items.map((item, index) => (
+            <Card
+              key={index}
+              className="bg-white/90 backdrop-blur-sm border-0 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
+            >
+              <CardContent className="p-8 text-center">
+                <div className="text-5xl mb-4">{item.icon}</div>
+                <h3 className="text-xl font-bold text-gray-800 mb-3">{item.title}</h3>
+                <p className="text-gray-600">{item.description}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
-    </section>
+    </StyledSection>
   )
 }

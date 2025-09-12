@@ -4,198 +4,143 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { CheckCircle, XCircle, Database, RefreshCw } from "lucide-react"
+import { Loader2 } from "lucide-react"
 
-export default function DatabasePage() {
-  const [isLoading, setIsLoading] = useState(false)
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
-  const [dbStatus, setDbStatus] = useState<string | null>(null)
+export default function DatabaseManagement() {
+  const [loading, setLoading] = useState(false)
+  const [message, setMessage] = useState("")
+  const [messageType, setMessageType] = useState<"success" | "error" | "">("")
 
   const initializeDatabase = async () => {
-    setIsLoading(true)
-    setMessage(null)
+    setLoading(true)
+    setMessage("")
 
     try {
       const response = await fetch("/api/init-content-table", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
       })
 
       const data = await response.json()
 
-      if (response.ok) {
-        setMessage({ type: "success", text: "データベースが正常に初期化されました！" })
+      if (data.success) {
+        setMessage("データベースが正常に初期化されました！")
+        setMessageType("success")
       } else {
-        setMessage({ type: "error", text: `エラー: ${data.error || "初期化に失敗しました"}` })
+        setMessage(`エラー: ${data.error}`)
+        setMessageType("error")
       }
     } catch (error) {
-      setMessage({
-        type: "error",
-        text: `ネットワークエラー: ${error instanceof Error ? error.message : "不明なエラー"}`,
-      })
+      setMessage(`エラー: ${error.message}`)
+      setMessageType("error")
     } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const checkDatabaseStatus = async () => {
-    setIsLoading(true)
-    setDbStatus(null)
-
-    try {
-      const response = await fetch("/api/db-status")
-      const data = await response.json()
-
-      if (response.ok) {
-        setDbStatus(`接続成功: ${data.message || "データベースは正常に動作しています"}`)
-      } else {
-        setDbStatus(`接続エラー: ${data.error || "データベースに接続できません"}`)
-      }
-    } catch (error) {
-      setDbStatus(`ネットワークエラー: ${error instanceof Error ? error.message : "不明なエラー"}`)
-    } finally {
-      setIsLoading(false)
+      setLoading(false)
     }
   }
 
   const testContentAPI = async () => {
-    setIsLoading(true)
-    setMessage(null)
+    setLoading(true)
+    setMessage("")
 
     try {
-      // Test fetching content
-      const response = await fetch("/api/content?section=valueProposition")
+      const response = await fetch("/api/content?section=services")
       const data = await response.json()
 
-      if (response.ok) {
-        setMessage({
-          type: "success",
-          text: `コンテンツAPI テスト成功: ${data.content ? "データが見つかりました" : "データが見つかりません"}`,
-        })
+      if (data.content) {
+        setMessage("コンテンツAPIが正常に動作しています！")
+        setMessageType("success")
       } else {
-        setMessage({ type: "error", text: `コンテンツAPI エラー: ${data.error}` })
+        setMessage("コンテンツが見つかりませんでした。データベースを初期化してください。")
+        setMessageType("error")
       }
     } catch (error) {
-      setMessage({
-        type: "error",
-        text: `API テストエラー: ${error instanceof Error ? error.message : "不明なエラー"}`,
-      })
+      setMessage(`APIテストエラー: ${error.message}`)
+      setMessageType("error")
     } finally {
-      setIsLoading(false)
+      setLoading(false)
+    }
+  }
+
+  const checkDatabaseStatus = async () => {
+    setLoading(true)
+    setMessage("")
+
+    try {
+      const response = await fetch("/api/init-content-table")
+      const data = await response.json()
+
+      if (data.success) {
+        setMessage(`データベース接続OK - レコード数: ${data.recordCount}`)
+        setMessageType("success")
+      } else {
+        setMessage(`データベースステータス: ${data.error}`)
+        setMessageType("error")
+      }
+    } catch (error) {
+      setMessage(`接続エラー: ${error.message}`)
+      setMessageType("error")
+    } finally {
+      setLoading(false)
     }
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">データベース管理</h1>
-
-      <div className="grid gap-6">
+    <div className="min-h-screen bg-gray-100 p-8">
+      <div className="max-w-4xl mx-auto">
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Database className="h-5 w-5" />
-              データベース初期化
-            </CardTitle>
+            <CardTitle>データベース管理</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <p className="text-gray-600">
-              コンテンツ管理用のデータベーステーブルを作成し、デフォルトデータを挿入します。
-            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Button onClick={initializeDatabase} disabled={loading} className="w-full">
+                {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                データベースを初期化
+              </Button>
 
-            <Button onClick={initializeDatabase} disabled={isLoading} className="w-full">
-              {isLoading ? (
-                <>
-                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                  初期化中...
-                </>
-              ) : (
-                <>
-                  <Database className="mr-2 h-4 w-4" />
-                  データベースを初期化
-                </>
-              )}
-            </Button>
+              <Button onClick={testContentAPI} disabled={loading} variant="outline" className="w-full bg-transparent">
+                {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                コンテンツAPIをテスト
+              </Button>
+
+              <Button
+                onClick={checkDatabaseStatus}
+                disabled={loading}
+                variant="outline"
+                className="w-full bg-transparent"
+              >
+                {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                接続状況を確認
+              </Button>
+            </div>
 
             {message && (
-              <Alert className={message.type === "success" ? "border-green-500" : "border-red-500"}>
-                {message.type === "success" ? (
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                ) : (
-                  <XCircle className="h-4 w-4 text-red-500" />
-                )}
-                <AlertDescription className={message.type === "success" ? "text-green-700" : "text-red-700"}>
-                  {message.text}
+              <Alert
+                className={messageType === "success" ? "border-green-500 bg-green-50" : "border-red-500 bg-red-50"}
+              >
+                <AlertDescription className={messageType === "success" ? "text-green-800" : "text-red-800"}>
+                  {message}
                 </AlertDescription>
               </Alert>
             )}
-          </CardContent>
-        </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>データベース接続テスト</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-gray-600">データベースへの接続状況を確認します。</p>
+            <div className="mt-8 p-4 bg-blue-50 rounded-lg">
+              <h3 className="font-semibold mb-2">使用方法:</h3>
+              <ol className="list-decimal list-inside space-y-1 text-sm">
+                <li>「データベースを初期化」をクリックしてテーブルとデータを作成</li>
+                <li>「コンテンツAPIをテスト」で動作確認</li>
+                <li>管理者ページ（/admin）でコンテンツを編集</li>
+                <li>別ブラウザで変更が反映されることを確認</li>
+              </ol>
+            </div>
 
-            <Button
-              onClick={checkDatabaseStatus}
-              disabled={isLoading}
-              variant="outline"
-              className="w-full bg-transparent"
-            >
-              {isLoading ? (
-                <>
-                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                  確認中...
-                </>
-              ) : (
-                "接続状況を確認"
-              )}
-            </Button>
-
-            {dbStatus && (
-              <Alert>
-                <AlertDescription>{dbStatus}</AlertDescription>
-              </Alert>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>コンテンツAPI テスト</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-gray-600">コンテンツ取得APIの動作を確認します。</p>
-
-            <Button onClick={testContentAPI} disabled={isLoading} variant="outline" className="w-full bg-transparent">
-              {isLoading ? (
-                <>
-                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                  テスト中...
-                </>
-              ) : (
-                "コンテンツAPI をテスト"
-              )}
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>使用方法</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600">
-              <li>まず「データベースを初期化」ボタンをクリックしてテーブルを作成</li>
-              <li>「接続状況を確認」でデータベース接続をテスト</li>
-              <li>「コンテンツAPI をテスト」でAPI動作を確認</li>
-              <li>管理者ページ（/admin）でコンテンツを編集</li>
-              <li>別のブラウザで変更が反映されることを確認</li>
-            </ol>
+            <div className="mt-4 p-4 bg-yellow-50 rounded-lg">
+              <h3 className="font-semibold mb-2">トラブルシューティング:</h3>
+              <ul className="list-disc list-inside space-y-1 text-sm">
+                <li>変更が反映されない場合は、ページを再読み込みしてください</li>
+                <li>エラーが発生する場合は、「接続状況を確認」をクリックしてください</li>
+                <li>それでも解決しない場合は、データベースを再初期化してください</li>
+              </ul>
+            </div>
           </CardContent>
         </Card>
       </div>

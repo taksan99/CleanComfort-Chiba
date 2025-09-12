@@ -1,9 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
-import AnimatedSection from "./AnimatedSection"
-import { useImageUrls } from "../hooks/useImageUrls"
+import { StyledSection } from "./StyledSection"
 
 interface ValuePropositionItem {
   title: string
@@ -11,71 +10,105 @@ interface ValuePropositionItem {
   icon: string
 }
 
-const defaultItems: ValuePropositionItem[] = [
-  { title: "清潔で快適な住環境", description: "プロの技術で隅々まで清潔に", icon: "✨" },
-  { title: "時間の有効活用", description: "掃除の時間を大切な時間に", icon: "⏰" },
-  { title: "健康的な生活空間", description: "アレルゲンや細菌を徹底除去", icon: "🌿" },
-  { title: "心の安らぎ", description: "美しい空間で心もリフレッシュ", icon: "💆‍♀️" },
-]
+interface ValuePropositionData {
+  title: string
+  subtitle: string
+  items: ValuePropositionItem[]
+}
 
 export default function ValueProposition() {
-  const [items, setItems] = useState<ValuePropositionItem[]>(defaultItems)
-  const { imageUrls, isLoading, error } = useImageUrls()
+  const [data, setData] = useState<ValuePropositionData | null>(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchContent()
+    const fetchData = async () => {
+      try {
+        const response = await fetch("/api/content?section=valueProposition")
+        const result = await response.json()
+        if (result.content) {
+          setData(JSON.parse(result.content))
+        } else {
+          // Fallback default data
+          setData({
+            title: "4つの幸せな暮らしを実現",
+            subtitle: "クリーンコンフォート千葉が提供する価値",
+            items: [
+              {
+                title: "清潔で健康的な住環境",
+                description: "プロの技術で徹底清掃し、家族の健康を守ります",
+                icon: "🏠",
+              },
+              {
+                title: "時間の有効活用",
+                description: "清掃作業から解放され、大切な時間を有意義に過ごせます",
+                icon: "⏰",
+              },
+              {
+                title: "ストレスフリーな生活",
+                description: "掃除の悩みから解放され、心地よい空間で過ごせます",
+                icon: "😊",
+              },
+              {
+                title: "専門的な仕上がり",
+                description: "素人では難しい箇所も、プロの技術で美しく仕上げます",
+                icon: "✨",
+              },
+            ],
+          })
+        }
+      } catch (error) {
+        console.error("Error fetching value proposition:", error)
+        setData(null)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchData()
   }, [])
 
-  const fetchContent = async () => {
-    try {
-      const response = await fetch("/api/content?section=valueProposition")
-      const data = await response.json()
-      if (data.content) {
-        setItems(data.content)
-      }
-    } catch (error) {
-      console.error("Error fetching value proposition content:", error)
-    }
+  if (loading) {
+    return (
+      <StyledSection className="py-20" backgroundImage="valuePropositionBackgroundImage">
+        <div className="container mx-auto px-4">
+          <div className="text-center">
+            <div className="animate-pulse">
+              <div className="h-8 bg-gray-300 rounded w-1/3 mx-auto mb-4"></div>
+              <div className="h-4 bg-gray-300 rounded w-1/2 mx-auto"></div>
+            </div>
+          </div>
+        </div>
+      </StyledSection>
+    )
   }
 
-  if (isLoading) {
-    return <div>Loading...</div>
+  if (!data) {
+    return null
   }
-
-  if (error) {
-    console.error("Error loading value proposition images:", error)
-  }
-
-  const backgroundImage = imageUrls.valuePropositionBackgroundImage?.url
 
   return (
-    <section
-      id="value-proposition"
-      className="relative bg-cover bg-center bg-no-repeat py-16"
-      style={{
-        backgroundImage: `url(${backgroundImage || "/placeholder.svg"})`,
-        backgroundAttachment: "fixed",
-      }}
-    >
-      <div className="absolute inset-0 bg-black opacity-50"></div>
-      <div className="container mx-auto px-4 relative z-10">
-        <AnimatedSection>
-          <h2 className="text-4xl font-bold text-center mb-12 text-white">4つの幸せな暮らし</h2>
-        </AnimatedSection>
+    <StyledSection className="py-20" backgroundImage="valuePropositionBackgroundImage">
+      <div className="container mx-auto px-4">
+        <div className="text-center mb-16">
+          <h2 className="text-4xl font-bold text-gray-800 mb-4">{data.title}</h2>
+          <p className="text-xl text-gray-600">{data.subtitle}</p>
+        </div>
+
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {items.map((item, index) => (
-            <AnimatedSection key={index}>
-              <Card className="text-center h-full bg-white bg-opacity-95 hover:bg-opacity-100 transition-all duration-300 transform hover:scale-105">
-                <CardContent className="p-6">
-                  <div className="text-4xl mb-4">{item.icon}</div>
-                  <h3 className="text-xl font-semibold mb-2 text-gray-800">{item.title}</h3>
-                  <p className="text-gray-600">{item.description}</p>
-                </CardContent>
-              </Card>
-            </AnimatedSection>
+          {data.items.map((item, index) => (
+            <Card
+              key={index}
+              className="bg-white/90 backdrop-blur-sm border-0 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
+            >
+              <CardContent className="p-8 text-center">
+                <div className="text-6xl mb-4">{item.icon}</div>
+                <h3 className="text-xl font-bold text-gray-800 mb-3">{item.title}</h3>
+                <p className="text-gray-600">{item.description}</p>
+              </CardContent>
+            </Card>
           ))}
         </div>
       </div>
-    </section>
+    </StyledSection>
   )
 }
