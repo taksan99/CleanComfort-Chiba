@@ -7,7 +7,7 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   images: {
-    domains: ["localhost", "vercel.app", "cleancomfort-chiba.vercel.app"],
+    domains: ["localhost", "vercel.app", "cleancomfortchiba.vercel.app"],
     remotePatterns: [
       {
         protocol: "https",
