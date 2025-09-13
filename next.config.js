@@ -6,6 +6,25 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  images: {
+    domains: [
+      "cleancomfort-chiba-uploads.s3.amazonaws.com",
+      "cleancomfort-chiba-uploads.s3.ap-northeast-1.amazonaws.com",
+    ],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "cleancomfort-chiba-uploads.s3.amazonaws.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "cleancomfort-chiba-uploads.s3.ap-northeast-1.amazonaws.com",
+        pathname: "/**",
+      },
+    ],
+    unoptimized: true,
+  },
   async headers() {
     return [
       {
@@ -34,24 +53,21 @@ const nextConfig = {
       },
     ]
   },
-  images: {
-    domains: [
-      "cleancomfort-chiba-uploads.s3.amazonaws.com",
-      "cleancomfort-chiba-uploads.s3.ap-northeast-1.amazonaws.com",
-    ],
-    remotePatterns: [
+  async rewrites() {
+    return [
       {
-        protocol: "https",
-        hostname: "cleancomfort-chiba-uploads.s3.amazonaws.com",
-        pathname: "/**",
+        source: "/robots.txt",
+        destination: "/api/robots",
       },
       {
-        protocol: "https",
-        hostname: "cleancomfort-chiba-uploads.s3.ap-northeast-1.amazonaws.com",
-        pathname: "/**",
+        source: "/sitemap.xml",
+        destination: "/api/sitemap",
       },
-    ],
-    unoptimized: true,
+      {
+        source: "/favicon.ico",
+        destination: "/api/favicon",
+      },
+    ]
   },
 }
 
