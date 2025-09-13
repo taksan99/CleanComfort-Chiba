@@ -1,97 +1,136 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Sun, Flower, Leaf, Snowflake } from "lucide-react"
+import AnimatedSection from "./AnimatedSection"
+import { useImageUrls } from "@/app/hooks/useImageUrls"
+import ImageWithFallback from "./ImageWithFallback"
+import ErrorMessage from "./ErrorMessage"
 
-interface SeasonalPlan {
-  season: string
-  title: string
-  description: string
-  services: string[]
-  price: string
-}
+const SeasonRibbon = ({ color }: { color: string }) => (
+  <div className={`absolute top-0 right-0 w-16 h-16 ${color} overflow-hidden`}>
+    <div className="absolute top-0 right-0 transform translate-x-1/2 -translate-y-1/2 rotate-45 w-16 h-8 bg-white"></div>
+  </div>
+)
 
-const initialPlans: SeasonalPlan[] = [
+const initialSeasonalPlans = [
   {
     season: "春",
-    title: "春の新生活応援プラン",
-    description: "新生活のスタートに最適な清掃サービスをお得なセットでご提供",
-    services: ["エアコンクリーニング", "ハウスクリーニング", "窓ガラス清掃"],
-    price: "25,000円～",
+    seasonKey: "spring",
+    title: "花粉対策セット",
+    description: "エアコン＋換気扇クリーニング",
+    icon: Flower,
+    color: "text-pink-500",
+    ribbonColor: "bg-pink-500",
+    imageKey: "springPlanImage",
   },
   {
     season: "夏",
-    title: "夏の快適生活プラン",
-    description: "暑い夏を快適に過ごすためのエアコン重点清掃プラン",
-    services: ["エアコン徹底洗浄", "水回りクリーニング", "カビ対策"],
-    price: "30,000円～",
+    seasonKey: "summer",
+    title: "夏の快適プラン",
+    description: "エアコン全台クリーニング または 浴室クリーニング",
+    icon: Sun,
+    color: "text-yellow-500",
+    ribbonColor: "bg-yellow-500",
+    imageKey: "summerPlanImage",
   },
   {
     season: "秋",
-    title: "秋の大掃除プラン",
-    description: "年末前の準備として、お家全体をしっかりと清掃",
-    services: ["全室清掃", "換気扇清掃", "床ワックス"],
-    price: "35,000円～",
+    seasonKey: "autumn",
+    title: "寒さ対策セット",
+    description: "エアコン＋窓ガラスクリーニング",
+    icon: Leaf,
+    color: "text-orange-500",
+    ribbonColor: "bg-orange-500",
+    imageKey: "autumnPlanImage",
   },
   {
     season: "冬",
-    title: "冬の年末大掃除プラン",
-    description: "新年を気持ちよく迎えるための徹底清掃サービス",
-    services: ["大掃除フルセット", "水回り5点セット", "エアコンクリーニング"],
-    price: "50,000円～",
+    seasonKey: "winter",
+    title: "冬の快適プラン",
+    description: "エアコン＋リビングクリーニング（床清掃・ワックスがけ）",
+    icon: Snowflake,
+    color: "text-blue-500",
+    ribbonColor: "bg-blue-500",
+    imageKey: "winterPlanImage",
   },
 ]
 
 export default function SeasonalPlans() {
-  const [plans, setPlans] = useState<SeasonalPlan[]>(initialPlans)
+  const [plans, setPlans] = useState(initialSeasonalPlans)
+  const { imageUrls, isLoading, error } = useImageUrls()
 
   useEffect(() => {
     const savedPlans = localStorage.getItem("seasonalPlansContent")
     if (savedPlans) {
       try {
         const parsedPlans = JSON.parse(savedPlans)
-        setPlans(parsedPlans)
+        setPlans(
+          initialSeasonalPlans.map((initialPlan, index) => ({
+            ...initialPlan,
+            title: parsedPlans[index]?.title || initialPlan.title,
+            description: parsedPlans[index]?.description || initialPlan.description,
+          })),
+        )
       } catch (error) {
-        console.error("Error parsing saved seasonal plans:", error)
+        console.error("Error parsing saved plans:", error)
       }
     }
   }, [])
 
-  return (
-    <section className="py-20 bg-gradient-to-br from-green-50 to-blue-50">
-      <div className="container mx-auto px-4">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-gray-800 mb-4">季節別おすすめプラン</h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">季節に合わせた最適な清掃プランをご用意しています。</p>
-        </div>
+  if (isLoading) {
+    return <div>Loading...</div>
+  }
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {plans.map((plan, index) => (
-            <div key={index} className="bg-white rounded-lg p-6 hover:shadow-lg transition-shadow duration-300">
-              <div className="text-center mb-4">
-                <span className="inline-block bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-semibold">
-                  {plan.season}
-                </span>
-              </div>
-              <h3 className="text-xl font-bold text-gray-800 mb-3">{plan.title}</h3>
-              <p className="text-gray-600 mb-4">{plan.description}</p>
-              <div className="text-2xl font-bold text-blue-600 mb-4">{plan.price}</div>
-              <ul className="space-y-2">
-                {plan.services.map((service, serviceIndex) => (
-                  <li key={serviceIndex} className="flex items-center text-sm text-gray-600">
-                    <svg className="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                      <path
-                        fillRule="evenodd"
-                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                    {service}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
+  if (error) {
+    return <ErrorMessage message={error.message} />
+  }
+
+  const backgroundImage = imageUrls.seasonalPlansBackgroundImage?.url || "/placeholder.svg"
+
+  return (
+    <section
+      className="relative bg-cover bg-center bg-no-repeat py-16"
+      style={{
+        backgroundImage: `url(${backgroundImage})`,
+        backgroundAttachment: "fixed",
+      }}
+    >
+      <div className="absolute inset-0 bg-black opacity-20"></div>
+      <div className="container mx-auto px-4">
+        <h2 className="text-3xl font-bold text-center mb-12 text-gray-800 bg-white bg-opacity-75 p-4 rounded-lg shadow-lg">
+          季節別おすすめプラン
+        </h2>
+        <AnimatedSection>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {plans.map((plan) => {
+              const Icon = plan.icon
+              return (
+                <Card key={plan.season} className="h-full relative overflow-hidden bg-white bg-opacity-90">
+                  <SeasonRibbon color={plan.ribbonColor} />
+                  <ImageWithFallback
+                    src={imageUrls[plan.imageKey]?.url || "/placeholder.svg"}
+                    fallbackSrc="/placeholder.svg"
+                    alt={`${plan.season}のおすすめプラン`}
+                    width={300}
+                    height={200}
+                    className="w-full h-48 object-cover"
+                  />
+                  <CardHeader>
+                    <div className={`${plan.color} mb-4`}>
+                      <Icon className="h-12 w-12" />
+                    </div>
+                    <CardTitle style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)" }}>{plan.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)" }}>{plan.description}</p>
+                  </CardContent>
+                </Card>
+              )
+            })}
+          </div>
+        </AnimatedSection>
       </div>
     </section>
   )

@@ -1,138 +1,171 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Check } from "lucide-react"
+import AnimatedSection from "./AnimatedSection"
+import { useImageUrls } from "@/app/hooks/useImageUrls"
 
 interface SubscriptionPlan {
   name: string
   price: string
-  frequency: string
-  services: string[]
+  description: string
   features: string[]
-  popular?: boolean
+  limits: string
+  color: string
+  buttonColor: string
+  ribbonColor: string
 }
 
 const initialPlans: SubscriptionPlan[] = [
   {
-    name: "ベーシックプラン",
-    price: "月額 8,000円",
-    frequency: "月1回",
-    services: ["エアコンクリーニング（年2回）", "簡易清掃"],
-    features: ["優先予約", "10%割引", "無料相談"],
+    name: "ベーシック",
+    price: "9,800",
+    description: "月1回の基本清掃",
+    features: [
+      "リビング・キッチン清掃",
+      "浴室・トイレ清掃",
+      "掃除機がけ・拭き掃除",
+      "洗濯1回分（乾燥・たたみ含む）",
+      "ゴミ出し",
+    ],
+    limits: "40㎡までの物件対象。それ以上の物件は追加料金で対応可能。",
+    color: "bg-blue-100",
+    buttonColor: "bg-blue-500 hover:bg-blue-600",
+    ribbonColor: "from-yellow-600 to-yellow-800",
   },
   {
-    name: "スタンダードプラン",
-    price: "月額 15,000円",
-    frequency: "月2回",
-    services: ["ハウスクリーニング", "水回り清掃", "エアコンクリーニング（年4回）"],
-    features: ["優先予約", "15%割引", "無料相談", "緊急対応"],
-    popular: true,
+    name: "スタンダード",
+    price: "19,800",
+    description: "月2回の総合清掃",
+    features: [
+      "ベーシックプランの全内容",
+      "エアコンフィルター清掃",
+      "冷蔵庫・電子レンジ清掃",
+      "窓ガラス・網戸清掃",
+      "洗濯2回分（乾燥・たたみ含む）",
+      "布団干し",
+    ],
+    limits: "60㎡までの物件対象。それ以上の物件は追加料金で対応可能。",
+    color: "bg-green-100",
+    buttonColor: "bg-green-500 hover:bg-green-600",
+    ribbonColor: "from-gray-400 to-gray-600",
   },
   {
-    name: "プレミアムプラン",
-    price: "月額 25,000円",
-    frequency: "週1回",
-    services: ["フルハウスクリーニング", "水回り清掃", "便利屋サービス", "エアコンクリーニング（年6回）"],
-    features: ["最優先予約", "20%割引", "24時間相談", "緊急対応", "専任スタッフ"],
+    name: "プレミアム",
+    price: "59,800",
+    description: "月3回の徹底清掃＋家事代行",
+    features: [
+      "スタンダードプランの全内容",
+      "クローゼット整理",
+      "ベッドメイキング",
+      "アイロンがけ",
+      "買い物代行",
+      "植物の水やり・ペットのお世話",
+      "靴磨き",
+    ],
+    limits: "80㎡までの物件対象。それ以上の物件は追加料金で対応可能。",
+    color: "bg-yellow-100",
+    buttonColor: "bg-yellow-500 hover:bg-yellow-600",
+    ribbonColor: "from-yellow-400 to-yellow-600",
   },
 ]
 
+const PlanRibbon = ({ color }: { color: string }) => (
+  <>
+    <div className={`absolute top-0 right-0 w-16 h-16 overflow-hidden`}>
+      <div
+        className={`absolute top-0 right-0 transform translate-x-1/2 -translate-y-1/2 rotate-45 w-32 h-8 bg-gradient-to-r ${color}`}
+      ></div>
+    </div>
+    <div className={`absolute bottom-0 left-0 w-16 h-16 overflow-hidden`}>
+      <div
+        className={`absolute bottom-0 left-0 transform -translate-x-1/2 translate-y-1/2 rotate-45 w-32 h-8 bg-gradient-to-r ${color}`}
+      ></div>
+    </div>
+  </>
+)
+
 export default function Subscription() {
   const [plans, setPlans] = useState<SubscriptionPlan[]>(initialPlans)
+  const { imageUrls, isLoading, error } = useImageUrls()
 
   useEffect(() => {
-    const savedPlans = localStorage.getItem("subscriptionContent")
+    const savedPlans = localStorage.getItem("subscriptionPlans")
     if (savedPlans) {
-      try {
-        const parsedPlans = JSON.parse(savedPlans)
-        setPlans(parsedPlans)
-      } catch (error) {
-        console.error("Error parsing saved subscription plans:", error)
-      }
+      setPlans(JSON.parse(savedPlans))
     }
   }, [])
 
+  if (isLoading) {
+    return <div className="text-center py-16">Loading...</div>
+  }
+
+  if (error) {
+    console.error("Error loading image:", error)
+    // エラーが発生した場合でもコンポーネントを表示
+  }
+
+  const backgroundImage = imageUrls.subscriptionBackgroundImage?.url || "/placeholder.svg"
+
   return (
-    <section className="py-20 bg-gradient-to-br from-purple-50 to-blue-50">
+    <section className="py-16 bg-cover bg-center relative" style={{ backgroundImage: `url(${backgroundImage})` }}>
       <div className="container mx-auto px-4">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-gray-800 mb-4">サブスクリプションサービス</h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            定期的なメンテナンスで、いつでも清潔で快適な住環境を維持できます。
+        <h2 className="text-3xl font-bold text-center mb-6 text-gray-800 bg-white bg-opacity-75 p-4 rounded-lg shadow-lg">
+          サブスクリプションサービス
+        </h2>
+        <div className="text-center mb-12">
+          <p className="text-gray-600 bg-white bg-opacity-75 p-2 rounded-lg inline-block mx-auto">
+            定期的なお掃除と家事代行で、いつでも快適な暮らしを
           </p>
         </div>
-
-        <div className="grid lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {plans.map((plan, index) => (
-            <div
-              key={index}
-              className={`bg-white rounded-lg p-8 shadow-lg relative ${plan.popular ? "ring-2 ring-blue-500" : ""}`}
-            >
-              {plan.popular && (
-                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-blue-500 text-white px-4 py-2 rounded-full text-sm font-semibold">人気No.1</span>
-                </div>
-              )}
-
-              <div className="text-center mb-6">
-                <h3 className="text-2xl font-bold text-gray-800 mb-2">{plan.name}</h3>
-                <div className="text-3xl font-bold text-blue-600 mb-1">{plan.price}</div>
-                <p className="text-gray-600">{plan.frequency}</p>
+        <AnimatedSection>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+            {plans.map((plan) => (
+              <div key={plan.name} className="transform hover:scale-105 transition-transform duration-300">
+                <Card
+                  className={`${plan.color} overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 relative p-4 bg-opacity-90`}
+                >
+                  <PlanRibbon color={plan.ribbonColor} />
+                  <CardHeader>
+                    <CardTitle style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)" }}>{plan.name}</CardTitle>
+                    <CardDescription style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)" }}>
+                      {plan.description}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex-grow">
+                    <p
+                      className="text-4xl font-bold mb-4 text-gray-800"
+                      style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)" }}
+                    >
+                      ¥{plan.price}
+                      <span className="text-base font-normal">/月</span>
+                    </p>
+                    <ul className="space-y-2">
+                      {plan.features.map((feature, index) => (
+                        <li key={index} className="flex items-center">
+                          <Check className="h-5 w-5 text-green-500 mr-2" />
+                          <span style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)" }}>{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="mt-4 text-sm text-gray-600">
+                      <p style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)" }}>
+                        <strong>適用条件:</strong> {plan.limits}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
-
-              <div className="mb-6">
-                <h4 className="font-semibold text-gray-800 mb-3">含まれるサービス</h4>
-                <ul className="space-y-2">
-                  {plan.services.map((service, serviceIndex) => (
-                    <li key={serviceIndex} className="flex items-center text-sm text-gray-600">
-                      <svg className="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                        <path
-                          fillRule="evenodd"
-                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                      {service}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="mb-8">
-                <h4 className="font-semibold text-gray-800 mb-3">特典</h4>
-                <ul className="space-y-2">
-                  {plan.features.map((feature, featureIndex) => (
-                    <li key={featureIndex} className="flex items-center text-sm text-gray-600">
-                      <svg className="w-4 h-4 text-blue-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                        <path
-                          fillRule="evenodd"
-                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <button
-                className={`w-full py-3 px-6 rounded-lg font-semibold transition-colors duration-200 ${
-                  plan.popular
-                    ? "bg-blue-600 text-white hover:bg-blue-700"
-                    : "bg-gray-100 text-gray-800 hover:bg-gray-200"
-                }`}
-              >
-                プランを選択
-              </button>
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-12 text-center">
-          <p className="text-gray-600 mb-2">
-            ※サブスクリプションサービスは、単発サービスを一度ご利用いただいた後にお申し込みいただけます。
+            ))}
+          </div>
+        </AnimatedSection>
+        <div className="text-center mt-8">
+          <p className="text-sm text-gray-800 bg-white bg-opacity-75 p-2 rounded-lg inline-block mx-auto">
+            ※ サービス内容や頻度は、お客様のご要望に応じてカスタマイズ可能です。詳細はお問い合わせください。
+            エアコンクリーニング、ハウスクリーニング、便利屋サービスのいずれかを1回以上ご利用後、
+            またはサブスクリプション開始前の現地調査後にご利用いただけます。
           </p>
-          <p className="text-gray-600">※契約期間の縛りはありません。いつでも解約可能です。</p>
         </div>
       </div>
     </section>

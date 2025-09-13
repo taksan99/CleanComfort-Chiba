@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { PlusCircle, Trash2 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useToast } from "@/components/ui/use-toast"
 
 interface PromotionCard {
   id: string
@@ -38,7 +39,7 @@ const initialPromotions: PromotionCard[] = [
   {
     id: "2",
     title: "リピーター特典",
-    description: "年2回以上ご利用いただくと、2回目以降のご利用時��",
+    description: "年2回以上ご利用いただくと、2回目以降のご利用時に",
     discount: "5% OFF",
     startDate: "2023-01-01",
     endDate: "2025-12-31",
@@ -50,18 +51,25 @@ const initialPromotions: PromotionCard[] = [
 export default function PromotionsEditor() {
   const [promotions, setPromotions] = useState<PromotionCard[]>(initialPromotions)
   const [campaignText, setCampaignText] = useState("最大50%OFF！　春のお掃除キャンペーン実施中！")
+  const [isLoading, setIsLoading] = useState(false)
+  const { toast } = useToast()
 
   useEffect(() => {
-    const savedPromotions = localStorage.getItem("promotionsContent")
-    if (savedPromotions) {
-      setPromotions(JSON.parse(savedPromotions))
-    }
-
-    const savedCampaignText = localStorage.getItem("promotionsCampaignText")
-    if (savedCampaignText) {
-      setCampaignText(savedCampaignText)
-    }
+    fetchContent()
   }, [])
+
+  const fetchContent = async () => {
+    try {
+      const response = await fetch("/api/content?section=promotions")
+      const data = await response.json()
+      if (data.content) {
+        setPromotions(data.content.promotions || initialPromotions)
+        setCampaignText(data.content.campaignText || campaignText)
+      }
+    } catch (error) {
+      console.error("Error fetching content:", error)
+    }
+  }
 
   const handlePromotionChange = (index: number, field: keyof PromotionCard, value: string | boolean) => {
     const newPromotions = [...promotions]
@@ -89,10 +97,41 @@ export default function PromotionsEditor() {
     setPromotions(newPromotions)
   }
 
-  const handleSave = () => {
-    localStorage.setItem("promotionsContent", JSON.stringify(promotions))
-    localStorage.setItem("promotionsCampaignText", campaignText)
-    alert("お得な特典の内容が保存されました。")
+  const handleSave = async () => {
+    setIsLoading(true)
+    try {
+      const response = await fetch("/api/content", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          section: "promotions",
+          content: {
+            promotions,
+            campaignText,
+          },
+        }),
+      })
+
+      if (response.ok) {
+        toast({
+          title: "保存完了",
+          description: "お得な特典の内容が正常に保存されました。",
+        })
+      } else {
+        throw new Error("Failed to save")
+      }
+    } catch (error) {
+      console.error("Error saving content:", error)
+      toast({
+        title: "エラー",
+        description: "保存に失敗しました。",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -244,7 +283,9 @@ export default function PromotionsEditor() {
           </Card>
         </TabsContent>
       </Tabs>
-      <Button onClick={handleSave}>保存</Button>
+      <Button onClick={handleSave} disabled={isLoading}>
+        {isLoading ? "保存中..." : "保存"}
+      </Button>
     </div>
   )
 }

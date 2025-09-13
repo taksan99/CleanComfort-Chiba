@@ -1,99 +1,156 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Star } from "lucide-react"
+import AnimatedSection from "./AnimatedSection"
+import { useImageUrls } from "@/app/hooks/useImageUrls"
+import ImageWithFallback from "./ImageWithFallback"
+import ErrorMessage from "./ErrorMessage"
 
 interface Review {
   name: string
-  location: string
-  service: string
-  rating: number
+  age: number
+  occupation: string
   comment: string
+  rating: number
 }
 
 const initialReviews: Review[] = [
   {
-    name: "田中様",
-    location: "木更津市",
-    service: "エアコンクリーニング",
+    name: "佐藤 美咲",
+    age: 25,
+    occupation: "会社員",
+    comment:
+      "エアコンがピカピカになって、空気がすごく綺麗になりました！　アレルギーも軽減して、快適に過ごせています。気さくな人でよかった。毎年お願いしたいです！",
     rating: 5,
-    comment: "エアコンがとても綺麗になり、風も清潔になりました。作業も丁寧で満足です。",
   },
   {
-    name: "佐藤様",
-    location: "君津市",
-    service: "ハウスクリーニング",
+    name: "田中 健太",
+    age: 42,
+    occupation: "自営業",
+    comment:
+      "水回りの掃除をお願いしました。見違えるほどキレイになって大満足です。特にキッチンの油汚れが落ちたのがよかった。老齢の両親のちょっとした世話までしてくれて、嬉しかったです。",
     rating: 5,
-    comment: "忙しくて掃除ができずにいましたが、プロの技術で家全体がピカピカになりました。",
   },
   {
-    name: "山田様",
-    location: "富津市",
-    service: "水回りクリーニング",
+    name: "鈴木 優子",
+    age: 29,
+    occupation: "主婦",
+    comment:
+      "急な来客の前日に依頼したのに、迅速な対応をしていただき本当に助かりました。仕上がりも素晴らしく、友人にも褒められました。",
     rating: 5,
-    comment: "キッチンとお風呂の頑固な汚れが完全に取れて驚きました。また利用したいです。",
   },
   {
-    name: "鈴木様",
-    location: "袖ケ浦市",
-    service: "便利屋サービス",
+    name: "佐伯 真一",
+    age: 56,
+    occupation: "会社役員",
+    comment:
+      "両親の墓参り代行をお願いしました。丁寧に清掃しお花も供えていただき、素晴らしかったです。遠方に住んでいる身としては心強いサービスですね。",
     rating: 5,
-    comment: "家具の移動から電球交換まで、何でも対応してくれて助かりました。",
+  },
+  {
+    name: "中村 瑠璃子",
+    age: 33,
+    occupation: "フリーランス",
+    comment:
+      "突然のネズミ発生で困っていましたが、すぐに対応してくださいました。駆除だけでなく、予防対策まで丁寧に説明していただき、安心して生活できるようになりました。",
+    rating: 5,
+  },
+  {
+    name: "小林 浩一郎",
+    age: 31,
+    occupation: "会社員",
+    comment:
+      "思い切って友達代行、カラオケに同伴してもらいました。とても楽しくストレス発散できました！　普段一人で行くのは気が引けていたので、良い経験になりました！",
+    rating: 5,
   },
 ]
 
 export default function Reviews() {
-  const [reviews, setReviews] = useState<Review[]>(initialReviews)
+  const [reviews, setReviews] = useState(initialReviews)
+  const imageSections = useMemo(
+    () => [
+      "reviewsBackgroundImage",
+      ...Array(6)
+        .fill(0)
+        .map((_, i) => `review${i}`),
+    ],
+    [],
+  )
+  const { imageUrls, isLoading, error } = useImageUrls()
 
   useEffect(() => {
     const savedReviews = localStorage.getItem("reviewsContent")
     if (savedReviews) {
-      try {
-        const parsedReviews = JSON.parse(savedReviews)
-        setReviews(parsedReviews)
-      } catch (error) {
-        console.error("Error parsing saved reviews:", error)
-      }
+      setReviews(JSON.parse(savedReviews))
     }
   }, [])
 
-  const renderStars = (rating: number) => {
-    return Array.from({ length: 5 }, (_, index) => (
-      <svg
-        key={index}
-        className={`w-5 h-5 ${index < rating ? "text-yellow-400" : "text-gray-300"}`}
-        fill="currentColor"
-        viewBox="0 0 20 20"
-      >
-        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-      </svg>
-    ))
+  if (isLoading) {
+    return <div>Loading...</div>
   }
 
-  return (
-    <section className="py-20 bg-white">
-      <div className="container mx-auto px-4">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-gray-800 mb-4">お客様の声</h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            実際にご利用いただいたお客様からの嬉しいお声をご紹介します。
-          </p>
-        </div>
+  if (error) {
+    return <ErrorMessage message={error.message} />
+  }
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {reviews.map((review, index) => (
-            <div key={index} className="bg-gray-50 rounded-lg p-6">
-              <div className="flex items-center mb-4">
-                <div className="flex">{renderStars(review.rating)}</div>
-              </div>
-              <p className="text-gray-600 mb-4 italic">"{review.comment}"</p>
-              <div className="border-t pt-4">
-                <p className="font-semibold text-gray-800">{review.name}</p>
-                <p className="text-sm text-gray-600">{review.location}</p>
-                <p className="text-sm text-blue-600">{review.service}</p>
-              </div>
-            </div>
-          ))}
-        </div>
+  // Safely access the reviewsImage URL or use a fallback
+  const backgroundImage = imageUrls?.reviewsBackgroundImage?.url || "/placeholder.svg"
+
+  return (
+    <section
+      className="relative bg-cover bg-center bg-no-repeat py-16"
+      style={{
+        backgroundImage: `url(${backgroundImage})`,
+        backgroundAttachment: "fixed",
+      }}
+    >
+      <div className="absolute inset-0 bg-black opacity-20"></div>
+      <div className="container mx-auto px-4">
+        <h2 className="text-3xl font-bold text-center mb-12 text-gray-800 bg-white bg-opacity-75 p-4 rounded-lg shadow-lg">
+          お客様の声
+        </h2>
+        <AnimatedSection>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {reviews.map((review, index) => {
+              // Safely access the review image URL or use a fallback
+              const reviewImageUrl = imageUrls?.[`review${index}`]?.url || "/placeholder.svg"
+              return (
+                <Card key={index} className="hover:shadow-lg transition-shadow duration-300 bg-white bg-opacity-90">
+                  <CardHeader>
+                    <div className="flex items-center space-x-4">
+                      <ImageWithFallback
+                        src={reviewImageUrl || "/placeholder.svg"}
+                        fallbackSrc="/placeholder.svg"
+                        alt={review.name}
+                        width={64}
+                        height={64}
+                        className="rounded-full border-2 border-white shadow-md"
+                      />
+                      <div>
+                        <CardTitle style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)" }}>{review.name}</CardTitle>
+                        <p className="text-sm text-gray-600" style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)" }}>
+                          {review.age}歳 {review.occupation}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex mt-2">
+                      {[...Array(review.rating)].map((_, i) => (
+                        <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
+                      ))}
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-gray-700 italic" style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)" }}>
+                      "{review.comment}"
+                    </p>
+                  </CardContent>
+                </Card>
+              )
+            })}
+          </div>
+        </AnimatedSection>
       </div>
     </section>
   )

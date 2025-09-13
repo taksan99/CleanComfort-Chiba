@@ -1,71 +1,78 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { Card, CardContent } from "@/components/ui/card"
+import AnimatedSection from "./AnimatedSection"
+import { useImageUrls } from "../hooks/useImageUrls"
 
-interface ValueProp {
+interface ValuePropositionItem {
   title: string
   description: string
   icon: string
 }
 
-const initialValueProps: ValueProp[] = [
-  {
-    title: "清潔で快適な住環境",
-    description: "プロの技術で隅々まで清掃し、健康的で快適な住空間を実現します。",
-    icon: "🏠",
-  },
-  {
-    title: "時間の有効活用",
-    description: "清掃時間を節約し、ご家族との大切な時間や趣味の時間を増やせます。",
-    icon: "⏰",
-  },
-  {
-    title: "専門技術による安心",
-    description: "経験豊富なプロが最適な方法で清掃し、安心してお任せいただけます。",
-    icon: "🛡️",
-  },
-  {
-    title: "健康的な生活環境",
-    description: "アレルゲンや細菌を除去し、ご家族の健康をサポートします。",
-    icon: "💚",
-  },
+const defaultItems: ValuePropositionItem[] = [
+  { title: "清潔で快適な住環境", description: "プロの技術で隅々まで清潔に", icon: "✨" },
+  { title: "時間の有効活用", description: "掃除の時間を大切な時間に", icon: "⏰" },
+  { title: "健康的な生活空間", description: "アレルゲンや細菌を徹底除去", icon: "🌿" },
+  { title: "心の安らぎ", description: "美しい空間で心もリフレッシュ", icon: "💆‍♀️" },
 ]
 
 export default function ValueProposition() {
-  const [valueProps, setValueProps] = useState<ValueProp[]>(initialValueProps)
+  const [items, setItems] = useState<ValuePropositionItem[]>(defaultItems)
+  const { imageUrls, isLoading, error } = useImageUrls()
 
   useEffect(() => {
-    const savedValueProps = localStorage.getItem("valuePropositionContent")
-    if (savedValueProps) {
-      try {
-        const parsedValueProps = JSON.parse(savedValueProps)
-        setValueProps(parsedValueProps)
-      } catch (error) {
-        console.error("Error parsing saved value propositions:", error)
-      }
-    }
+    fetchContent()
   }, [])
 
-  return (
-    <section className="py-20 bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="container mx-auto px-4">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-gray-800 mb-4">4つの幸せな暮らし</h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            私たちのサービスがもたらす、豊かで快適な生活をご体験ください。
-          </p>
-        </div>
+  const fetchContent = async () => {
+    try {
+      const response = await fetch("/api/content?section=valueProposition")
+      const data = await response.json()
+      if (data.content) {
+        setItems(data.content)
+      }
+    } catch (error) {
+      console.error("Error fetching value proposition content:", error)
+    }
+  }
 
+  if (isLoading) {
+    return <div>Loading...</div>
+  }
+
+  if (error) {
+    console.error("Error loading value proposition images:", error)
+  }
+
+  const backgroundImage = imageUrls.valuePropositionBackgroundImage?.url
+
+  return (
+    <section
+      id="value-proposition"
+      className="relative bg-cover bg-center bg-no-repeat py-16"
+      style={{
+        backgroundImage: `url(${backgroundImage || "/placeholder.svg"})`,
+        backgroundAttachment: "fixed",
+      }}
+    >
+      <div className="absolute inset-0 bg-black opacity-50"></div>
+      <div className="container mx-auto px-4 relative z-10">
+        <AnimatedSection>
+          <h2 className="text-4xl font-bold text-center mb-12 text-white">4つの幸せな暮らし</h2>
+        </AnimatedSection>
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {valueProps.map((prop, index) => (
-            <div
-              key={index}
-              className="bg-white rounded-lg p-6 text-center hover:shadow-lg transition-shadow duration-300"
-            >
-              <div className="text-4xl mb-4">{prop.icon}</div>
-              <h3 className="text-xl font-bold text-gray-800 mb-3">{prop.title}</h3>
-              <p className="text-gray-600">{prop.description}</p>
-            </div>
+          {items.map((item, index) => (
+            <AnimatedSection key={index}>
+              <Card className="text-center h-full bg-white bg-opacity-95 hover:bg-opacity-100 transition-all duration-300 transform hover:scale-105">
+                <CardContent className="p-6">
+                  <div className="text-4xl mb-4">{item.icon}</div>
+                  <h3 className="text-xl font-semibold mb-2 text-gray-800">{item.title}</h3>
+                  <p className="text-gray-600">{item.description}</p>
+                </CardContent>
+              </Card>
+            </AnimatedSection>
           ))}
         </div>
       </div>
