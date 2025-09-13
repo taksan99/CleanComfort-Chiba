@@ -118,40 +118,45 @@ export default function Reviews() {
         </h2>
         <AnimatedSection>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {testimonials.map((testimonial, index) => (
-              <Card key={index} className="bg-white bg-opacity-90 hover:shadow-lg transition-shadow duration-300">
-                <CardHeader>
-                  <div className="flex items-center space-x-4">
-                    <ImageWithFallback
-                      src={imageUrls[`testimonial${index || "/placeholder.svg"}`]?.url || "/placeholder.svg"}
-                      fallbackSrc="/placeholder.svg"
-                      alt={testimonial.name}
-                      width={60}
-                      height={60}
-                      className="rounded-full shadow-xl"
-                    />
-                    <div>
-                      <CardTitle className="text-lg" style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)" }}>
-                        {testimonial.name}
-                      </CardTitle>
-                      <p className="text-sm text-gray-600">
-                        {testimonial.age}歳 / {testimonial.occupation}
-                      </p>
+            {testimonials.map((testimonial, index) => {
+              // 正しい画像URLの取得
+              const reviewImageUrl = imageUrls[`review${index}`]?.url || "/placeholder.svg"
+
+              return (
+                <Card key={index} className="bg-white bg-opacity-90 hover:shadow-lg transition-shadow duration-300">
+                  <CardHeader>
+                    <div className="flex items-center space-x-4">
+                      <ImageWithFallback
+                        src={reviewImageUrl || "/placeholder.svg"}
+                        fallbackSrc="/placeholder.svg"
+                        alt={testimonial.name}
+                        width={60}
+                        height={60}
+                        className="rounded-full shadow-xl"
+                      />
+                      <div>
+                        <CardTitle className="text-lg" style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)" }}>
+                          {testimonial.name}
+                        </CardTitle>
+                        <p className="text-sm text-gray-600">
+                          {testimonial.age}歳 / {testimonial.occupation}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex">
-                    {[...Array(testimonial.rating)].map((_, i) => (
-                      <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
-                    ))}
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-700" style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)" }}>
-                    {testimonial.comment}
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
+                    <div className="flex">
+                      {[...Array(testimonial.rating)].map((_, i) => (
+                        <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
+                      ))}
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-gray-700" style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)" }}>
+                      {testimonial.comment}
+                    </p>
+                  </CardContent>
+                </Card>
+              )
+            })}
           </div>
         </AnimatedSection>
       </div>

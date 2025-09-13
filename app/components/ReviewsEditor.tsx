@@ -75,10 +75,28 @@ export default function ReviewsEditor() {
   const { imageUrls, refreshImages } = useImageUrls()
 
   useEffect(() => {
-    const savedReviews = localStorage.getItem("reviewsContent")
-    if (savedReviews) {
-      setReviews(JSON.parse(savedReviews))
+    // データベースから取得を試行
+    const fetchContent = async () => {
+      try {
+        const response = await fetch("/api/content?section=testimonials")
+        if (response.ok) {
+          const data = await response.json()
+          if (data.content) {
+            setReviews(data.content)
+            return
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching testimonials content:", error)
+      }
+
+      // フォールバック: localStorageから取得
+      const savedReviews = localStorage.getItem("testimonialsContent")
+      if (savedReviews) {
+        setReviews(JSON.parse(savedReviews))
+      }
     }
+    fetchContent()
   }, [])
 
   const handleChange = (index: number, field: keyof Review, value: string | number) => {
@@ -97,9 +115,31 @@ export default function ReviewsEditor() {
     setReviews(newReviews)
   }
 
-  const handleSave = () => {
-    localStorage.setItem("reviewsContent", JSON.stringify(reviews))
-    alert("お客様の声の内容が保存されました。")
+  const handleSave = async () => {
+    try {
+      // データベースに保存
+      const response = await fetch("/api/content", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          section: "testimonials",
+          content: reviews,
+        }),
+      })
+
+      if (response.ok) {
+        alert("お客様の声の内容がデータベースに保存されました。")
+      } else {
+        throw new Error("Database save failed")
+      }
+    } catch (error) {
+      console.error("Error saving to database:", error)
+      // フォールバック: localStorageに保存
+      localStorage.setItem("testimonialsContent", JSON.stringify(reviews))
+      alert("お客様の声の内容がローカルに保存されました。")
+    }
   }
 
   const handleImageUpload = async (file: File, index: number) => {
@@ -122,7 +162,7 @@ export default function ReviewsEditor() {
       const data = await response.json()
       if (data.success) {
         alert("画像が正常にアップロードされました。")
-        refreshImages() // 画像URLを更新
+        await refreshImages() // 画像URLを更新
       } else {
         throw new Error("Image upload failed")
       }
