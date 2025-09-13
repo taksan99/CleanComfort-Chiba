@@ -73,22 +73,35 @@ export default function PricingOverview() {
   const maxItems = Math.max(...pricingData.map((category) => category.items.length))
 
   const imageSections = useMemo(() => ["pricingOverviewBackgroundImage"], [])
-  // const { imageUrls, isLoading, error } = useMultipleImageCache(imageSections)
   const { imageUrls, isLoading, error } = useImageUrls()
 
   useEffect(() => {
-    const savedPricingData = localStorage.getItem("pricingOverviewContent")
-    if (savedPricingData) {
-      try {
-        const parsedData = JSON.parse(savedPricingData)
-        if (Array.isArray(parsedData) && parsedData.length > 0) {
-          setPricingData(parsedData)
+    fetchContent()
+  }, [])
+
+  const fetchContent = async () => {
+    try {
+      const response = await fetch("/api/content?section=pricingOverview")
+      const data = await response.json()
+      if (data.content) {
+        setPricingData(data.content)
+      }
+    } catch (error) {
+      console.error("Error fetching pricing content:", error)
+      // Fallback to localStorage if API fails
+      const savedPricingData = localStorage.getItem("pricingOverviewContent")
+      if (savedPricingData) {
+        try {
+          const parsedData = JSON.parse(savedPricingData)
+          if (Array.isArray(parsedData) && parsedData.length > 0) {
+            setPricingData(parsedData)
+          }
+        } catch (error) {
+          console.error("Error parsing saved pricing data:", error)
         }
-      } catch (error) {
-        console.error("Error parsing saved pricing data:", error)
       }
     }
-  }, [])
+  }
 
   if (isLoading) {
     return <div>Loading...</div>

@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Plus, Trash2 } from "lucide-react"
+import { useToast } from "@/components/ui/use-toast"
 import type { PricingCategory } from "./PricingOverview"
 
 const initialPricingData: PricingCategory[] = [
@@ -56,13 +57,29 @@ const initialPricingData: PricingCategory[] = [
 
 export default function PricingOverviewEditor() {
   const [pricingData, setPricingData] = useState<PricingCategory[]>(initialPricingData)
+  const [isLoading, setIsLoading] = useState(false)
+  const { toast } = useToast()
 
   useEffect(() => {
-    const savedPricingData = localStorage.getItem("pricingOverviewContent")
-    if (savedPricingData) {
-      setPricingData(JSON.parse(savedPricingData))
-    }
+    fetchContent()
   }, [])
+
+  const fetchContent = async () => {
+    try {
+      const response = await fetch("/api/content?section=pricingOverview")
+      const data = await response.json()
+      if (data.content) {
+        setPricingData(data.content)
+      }
+    } catch (error) {
+      console.error("Error fetching pricing content:", error)
+      // Fallback to localStorage if API fails
+      const savedPricingData = localStorage.getItem("pricingOverviewContent")
+      if (savedPricingData) {
+        setPricingData(JSON.parse(savedPricingData))
+      }
+    }
+  }
 
   const handleCategoryChange = (index: number, field: keyof PricingCategory, value: string) => {
     const newPricingData = [...pricingData]
@@ -91,9 +108,40 @@ export default function PricingOverviewEditor() {
     setPricingData(newPricingData)
   }
 
-  const handleSave = () => {
-    localStorage.setItem("pricingOverviewContent", JSON.stringify(pricingData))
-    alert("料金体系の内容が保存されました。")
+  const handleSave = async () => {
+    setIsLoading(true)
+    try {
+      const response = await fetch("/api/content", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          section: "pricingOverview",
+          content: pricingData,
+        }),
+      })
+
+      if (response.ok) {
+        // Also save to localStorage as backup
+        localStorage.setItem("pricingOverviewContent", JSON.stringify(pricingData))
+        toast({
+          title: "保存完了",
+          description: "料金体系の内容が正常に保存されました。",
+        })
+      } else {
+        throw new Error("Failed to save")
+      }
+    } catch (error) {
+      console.error("Error saving content:", error)
+      toast({
+        title: "エラー",
+        description: "保存に失敗しました。",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -154,7 +202,9 @@ export default function PricingOverviewEditor() {
           </TabsContent>
         ))}
       </Tabs>
-      <Button onClick={handleSave}>保存</Button>
+      <Button onClick={handleSave} disabled={isLoading}>
+        {isLoading ? "保存中..." : "保存"}
+      </Button>
     </div>
   )
 }

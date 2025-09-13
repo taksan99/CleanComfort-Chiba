@@ -58,7 +58,6 @@ interface ServiceContent {
 const initialServices: ServiceContent[] = [
   {
     title: "ハウスクリーニング",
-    image: "/placeholder.svg?height=200&width=300",
     description: "あなたの家を隅々まで美しく",
     items: [
       { name: "水回り5点セット", icon: "water-5", desc: "68,000円～ 浴室/キッチン/レンジフード/トイレ/洗面台" },
@@ -79,7 +78,6 @@ const initialServices: ServiceContent[] = [
   },
   {
     title: "エアコンクリーニング",
-    image: "/placeholder.svg?height=200&width=300",
     description: "クリーンな空気で快適生活",
     items: [
       { name: "通常エアコン", icon: "air-conditioner", desc: "12,000円～ 壁掛け型" },
@@ -100,7 +98,6 @@ const initialServices: ServiceContent[] = [
   },
   {
     title: "便利屋サービス",
-    image: "/placeholder.svg?height=200&width=300",
     description: "日常のお困りごとを解決",
     items: [
       { name: "害獣・害虫駆除", icon: "pest-control", desc: "10,000円～ ネズミ、コウモリ、蜂の巣など" },
@@ -128,16 +125,29 @@ const initialServices: ServiceContent[] = [
 
 export default function Services() {
   const [services, setServices] = useState(initialServices)
-  const imageSections = ["servicesBackgroundImage", "houseCleaningCard", "airConCleaningCard", "handymanCard"]
   const { imageUrls, isLoading, error } = useImageUrls()
 
   useEffect(() => {
-    const savedServiceContent = localStorage.getItem("serviceContent")
-    if (savedServiceContent) {
-      const parsedContent = JSON.parse(savedServiceContent)
-      setServices(parsedContent)
-    }
+    fetchContent()
   }, [])
+
+  const fetchContent = async () => {
+    try {
+      const response = await fetch("/api/content?section=services")
+      const data = await response.json()
+      if (data.content) {
+        setServices(data.content)
+      }
+    } catch (error) {
+      console.error("Error fetching services content:", error)
+      // Fallback to localStorage if API fails
+      const savedServiceContent = localStorage.getItem("serviceContent")
+      if (savedServiceContent) {
+        const parsedContent = JSON.parse(savedServiceContent)
+        setServices(parsedContent)
+      }
+    }
+  }
 
   if (isLoading) {
     return <div>Loading...</div>
