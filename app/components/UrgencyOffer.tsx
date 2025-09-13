@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Clock } from "lucide-react"
 import AnimatedSection from "./AnimatedSection"
@@ -33,12 +33,47 @@ const scrollToContact = () => {
 
 const COUNTDOWN_DURATION = 72 * 60 * 60 // 72 hours in seconds
 
+interface UrgencyOfferContent {
+  title: string
+  offerText: string
+  buttonText: string
+  extendedMessage: string
+}
+
+const defaultContent: UrgencyOfferContent = {
+  title: "期間限定特別オファー",
+  offerText: "今すぐお申し込みの方、先着50名様に\nエアコンクリーニング10%OFF",
+  buttonText: "特別オファーを受け取る",
+  extendedMessage: "好評につき、特別オファーの期間を延長しました！",
+}
+
 export default function UrgencyOffer() {
   const [timeLeft, setTimeLeft] = useState(COUNTDOWN_DURATION)
   const [isExtended, setIsExtended] = useState(false)
-
-  const imageSections = useMemo(() => ["urgencyOfferBackgroundImage"], [])
+  const [content, setContent] = useState<UrgencyOfferContent>(defaultContent)
   const { imageUrls, isLoading, error } = useImageUrls()
+
+  useEffect(() => {
+    const fetchContent = async () => {
+      try {
+        const response = await fetch("/api/content?section=urgencyOffer")
+        if (response.ok) {
+          const data = await response.json()
+          if (data.content) {
+            setContent(data.content)
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching urgency offer content:", error)
+        // フォールバック: localStorageから取得
+        const savedContent = localStorage.getItem("urgencyOfferContent")
+        if (savedContent) {
+          setContent(JSON.parse(savedContent))
+        }
+      }
+    }
+    fetchContent()
+  }, [])
 
   useEffect(() => {
     const storedEndTime = localStorage.getItem("countdownEndTime")
@@ -108,7 +143,7 @@ export default function UrgencyOffer() {
       <div className="container mx-auto px-4 text-center">
         <div className="bg-white bg-opacity-75 p-8 rounded-lg shadow-lg inline-block">
           <h2 className="text-4xl font-bold mb-6 bg-white bg-opacity-75 p-4 rounded-lg shadow-lg inline-block">
-            <ShiningText text="期間限定特別オファー" />
+            <ShiningText text={content.title} />
           </h2>
           <style jsx global>{`
             @keyframes shine {
@@ -132,11 +167,7 @@ export default function UrgencyOffer() {
             }
           `}</style>
           <AnimatedSection>
-            {isExtended && (
-              <p className="text-lg font-semibold text-green-600 mb-4">
-                好評につき、特別オファーの期間を延長しました！
-              </p>
-            )}
+            {isExtended && <p className="text-lg font-semibold text-green-600 mb-4">{content.extendedMessage}</p>}
             <div className="flex items-center justify-center mb-6">
               <Clock className="h-8 w-8 text-red-500 mr-2" />
               <p className="text-xl font-semibold">
@@ -144,11 +175,12 @@ export default function UrgencyOffer() {
               </p>
             </div>
             <p className="text-lg mb-6">
-              今すぐお申し込みの方、先着50名様に
-              <br />
-              <span className="inline-block font-bold text-3xl text-red-600 bg-yellow-200 px-4 py-2 rounded-lg shadow-md animate-pulse">
-                エアコンクリーニング10%OFF
-              </span>
+              {content.offerText.split("\n").map((line, index) => (
+                <span key={index}>
+                  {line}
+                  {index < content.offerText.split("\n").length - 1 && <br />}
+                </span>
+              ))}
             </p>
             <SpecialOfferButton>
               <Button
@@ -156,7 +188,7 @@ export default function UrgencyOffer() {
                 className="text-lg px-8 py-4 bg-red-600 hover:bg-red-700 text-white"
                 onClick={scrollToContact}
               >
-                特別オファーを受け取る
+                {content.buttonText}
               </Button>
             </SpecialOfferButton>
           </AnimatedSection>

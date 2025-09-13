@@ -12,6 +12,20 @@ const ShiningText = ({ text }: { text: string }) => (
   <span className="inline-block text-white font-extrabold text-shadow-lg">{text}</span>
 )
 
+interface HeroContent {
+  title: string
+  subtitle: string
+  primaryButtonText: string
+  secondaryButtonText: string
+}
+
+const defaultHeroContent: HeroContent = {
+  title: "家族の笑顔が増える\n心地よい我が家へ",
+  subtitle: "忙しい毎日でも、清潔で快適な住まいを。\nプロの技で、あなたの大切な時間を取り戻します。",
+  primaryButtonText: "期間限定キャンペーン実施中！",
+  secondaryButtonText: "今すぐ無料見積もりを依頼する",
+}
+
 export default function HeroSection() {
   const { imageUrls, isLoading, error } = useImageUrls()
   const router = useRouter()
@@ -19,6 +33,30 @@ export default function HeroSection() {
   const [currentSlide, setCurrentSlide] = useState(0)
   const [nextSlide, setNextSlide] = useState(1)
   const [isTransitioning, setIsTransitioning] = useState(false)
+  const [heroContent, setHeroContent] = useState<HeroContent>(defaultHeroContent)
+
+  // データベースからコンテンツを取得
+  useEffect(() => {
+    const fetchContent = async () => {
+      try {
+        const response = await fetch("/api/content?section=hero")
+        if (response.ok) {
+          const data = await response.json()
+          if (data.content) {
+            setHeroContent(data.content)
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching hero content:", error)
+        // フォールバック: localStorageから取得
+        const savedContent = localStorage.getItem("heroContent")
+        if (savedContent) {
+          setHeroContent(JSON.parse(savedContent))
+        }
+      }
+    }
+    fetchContent()
+  }, [])
 
   useEffect(() => {
     const images: string[] = []
@@ -40,8 +78,8 @@ export default function HeroSection() {
           setCurrentSlide((prev) => (prev + 1) % heroImages.length)
           setNextSlide((prev) => (prev + 1) % heroImages.length)
           setIsTransitioning(false)
-        }, 1000) // トランジション時間
-      }, 5000) // 5秒ごとに切り替え
+        }, 1000)
+      }, 5000)
 
       return () => clearInterval(intervalId)
     }
@@ -118,14 +156,20 @@ export default function HeroSection() {
         <div className="flex flex-col md:flex-row items-center mt-16 md:mt-0">
           <div className="md:w-1/2 mb-10 md:mb-0">
             <h1 className="text-4xl md:text-5xl font-bold mb-4 hero-text text-white">
-              <ShiningText text="家族の笑顔が増える" />
-              <br />
-              <ShiningText text="心地よい我が家へ" />
+              {heroContent.title.split("\n").map((line, index) => (
+                <span key={index}>
+                  <ShiningText text={line} />
+                  {index < heroContent.title.split("\n").length - 1 && <br />}
+                </span>
+              ))}
             </h1>
             <p className="text-xl mb-6 text-white text-shadow-sm">
-              忙しい毎日でも、清潔で快適な住まいを。
-              <br />
-              プロの技で、あなたの大切な時間を取り戻します。
+              {heroContent.subtitle.split("\n").map((line, index) => (
+                <span key={index}>
+                  {line}
+                  {index < heroContent.subtitle.split("\n").length - 1 && <br />}
+                </span>
+              ))}
             </p>
             <div className="flex flex-col space-y-4 md:w-3/4">
               <Button
@@ -133,10 +177,10 @@ export default function HeroSection() {
                 className="text-lg px-8 py-4 w-full bg-yellow-400 hover:bg-yellow-500 text-gray-800"
                 onClick={scrollToPromotions}
               >
-                期間限定キャンペーン実施中！
+                {heroContent.primaryButtonText}
               </Button>
               <Button size="lg" variant="secondary" className="text-lg px-8 py-4 w-full" onClick={scrollToContact}>
-                今すぐ無料見積もりを依頼する
+                {heroContent.secondaryButtonText}
               </Button>
             </div>
           </div>

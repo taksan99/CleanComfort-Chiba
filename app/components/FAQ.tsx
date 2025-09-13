@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo, useCallback } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import AnimatedSection from "./AnimatedSection"
 import { useImageUrls } from "@/app/hooks/useImageUrls"
@@ -64,7 +64,7 @@ const defaultFAQs: FAQItem[] = [
     id: "9",
     question: "エアコンクリーニングの保証について教えてください。",
     answer:
-      "10年以上前のエアコンについては、すでにメーカーの製造が終了���ており、パーツが入手できない場合があるため、保証外となる可能性があります。ご了承ください。",
+      "10年以上前のエアコンについては、すでにメーカーの製造が終了しており、パーツが入手できない場合があるため、保証外となる可能性があります。ご了承ください。",
   },
   {
     id: "10",
@@ -89,15 +89,28 @@ const defaultFAQs: FAQItem[] = [
 export default function FAQ() {
   const [faqs, setFaqs] = useState(defaultFAQs)
   const [activeId, setActiveId] = useState<string | null>(null)
-
-  const imageSections = useMemo(() => ["faqBackgroundImage"], [])
   const { imageUrls, isLoading, error } = useImageUrls()
 
   useEffect(() => {
-    const savedFAQs = localStorage.getItem("faqContent")
-    if (savedFAQs) {
-      setFaqs(JSON.parse(savedFAQs))
+    const fetchContent = async () => {
+      try {
+        const response = await fetch("/api/content?section=faq")
+        if (response.ok) {
+          const data = await response.json()
+          if (data.content) {
+            setFaqs(data.content)
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching FAQ content:", error)
+        // フォールバック: localStorageから取得
+        const savedFAQs = localStorage.getItem("faqContent")
+        if (savedFAQs) {
+          setFaqs(JSON.parse(savedFAQs))
+        }
+      }
     }
+    fetchContent()
   }, [])
 
   const toggleFAQ = useCallback((id: string) => {

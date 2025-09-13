@@ -1,50 +1,81 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Users, ThumbsUp, Calendar, Sparkles } from "lucide-react"
 import AnimatedSection from "./AnimatedSection"
 import { useImageUrls } from "@/app/hooks/useImageUrls"
 import ErrorMessage from "./ErrorMessage"
 
-const trustSignals = [
+interface TrustSignal {
+  title: string
+  description: string
+  icon: any
+  color: string
+}
+
+const defaultTrustSignals = [
   {
-    icon: <Users className="h-12 w-12 text-blue-500" />,
     title: "10年以上",
     description: "豊富な清掃実績",
+    icon: Users,
     color: "bg-blue-100",
   },
   {
-    icon: <ThumbsUp className="h-12 w-12 text-green-500" />,
     title: "顧客満足度95%",
     description: "（2024年度自社調査）",
+    icon: ThumbsUp,
     color: "bg-green-100",
   },
   {
-    icon: <Calendar className="h-12 w-12 text-yellow-500" />,
     title: "365日対応",
     description: "年中無休でサービス提供",
+    icon: Calendar,
     color: "bg-yellow-100",
   },
   {
-    icon: <Sparkles className="h-12 w-12 text-purple-500" />,
     title: "プロの技術",
     description: "経験豊富なスタッフが対応",
+    icon: Sparkles,
     color: "bg-purple-100",
   },
 ]
 
 export default function TrustSignals() {
-  const [signals, setSignals] = useState(trustSignals)
-
-  const imageSections = useMemo(() => ["trustSignalsBackgroundImage"], [])
+  const [signals, setSignals] = useState(defaultTrustSignals)
   const { imageUrls, isLoading, error } = useImageUrls()
 
   useEffect(() => {
-    const savedSignals = localStorage.getItem("trustSignalsContent")
-    if (savedSignals) {
-      setSignals(JSON.parse(savedSignals))
+    const fetchContent = async () => {
+      try {
+        const response = await fetch("/api/content?section=trustSignals")
+        if (response.ok) {
+          const data = await response.json()
+          if (data.content) {
+            const updatedSignals = defaultTrustSignals.map((defaultSignal, index) => ({
+              ...defaultSignal,
+              title: data.content[index]?.title || defaultSignal.title,
+              description: data.content[index]?.description || defaultSignal.description,
+            }))
+            setSignals(updatedSignals)
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching trust signals content:", error)
+        // フォールバック: localStorageから取得
+        const savedSignals = localStorage.getItem("trustSignalsContent")
+        if (savedSignals) {
+          const parsedSignals = JSON.parse(savedSignals)
+          const updatedSignals = defaultTrustSignals.map((defaultSignal, index) => ({
+            ...defaultSignal,
+            title: parsedSignals[index]?.title || defaultSignal.title,
+            description: parsedSignals[index]?.description || defaultSignal.description,
+          }))
+          setSignals(updatedSignals)
+        }
+      }
     }
+    fetchContent()
   }, [])
 
   if (isLoading) {
@@ -78,7 +109,9 @@ export default function TrustSignals() {
                 className={`${signal.color} hover:shadow-lg transition-shadow duration-300 bg-opacity-90`}
               >
                 <CardHeader>
-                  <div className="flex justify-center mb-4">{signal.icon}</div>
+                  <div className="flex justify-center mb-4">
+                    <signal.icon className="h-12 w-12 text-blue-500" />
+                  </div>
                   <CardTitle className="text-center" style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)" }}>
                     {signal.title}
                   </CardTitle>

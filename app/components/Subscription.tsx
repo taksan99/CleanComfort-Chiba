@@ -17,7 +17,7 @@ interface SubscriptionPlan {
   ribbonColor: string
 }
 
-const initialPlans: SubscriptionPlan[] = [
+const defaultPlans: SubscriptionPlan[] = [
   {
     name: "ベーシック",
     price: "9,800",
@@ -87,14 +87,29 @@ const PlanRibbon = ({ color }: { color: string }) => (
 )
 
 export default function Subscription() {
-  const [plans, setPlans] = useState<SubscriptionPlan[]>(initialPlans)
+  const [plans, setPlans] = useState<SubscriptionPlan[]>(defaultPlans)
   const { imageUrls, isLoading, error } = useImageUrls()
 
   useEffect(() => {
-    const savedPlans = localStorage.getItem("subscriptionPlans")
-    if (savedPlans) {
-      setPlans(JSON.parse(savedPlans))
+    const fetchContent = async () => {
+      try {
+        const response = await fetch("/api/content?section=subscription")
+        if (response.ok) {
+          const data = await response.json()
+          if (data.content) {
+            setPlans(data.content)
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching subscription content:", error)
+        // フォールバック: localStorageから取得
+        const savedPlans = localStorage.getItem("subscriptionPlans")
+        if (savedPlans) {
+          setPlans(JSON.parse(savedPlans))
+        }
+      }
     }
+    fetchContent()
   }, [])
 
   if (isLoading) {

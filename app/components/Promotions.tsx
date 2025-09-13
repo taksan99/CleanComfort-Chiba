@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Users, Repeat, Sparkles } from "lucide-react"
 import AnimatedSection from "./AnimatedSection"
@@ -24,7 +24,7 @@ interface PromotionCard {
   variant: "A" | "B"
 }
 
-const initialPromotions: PromotionCard[] = [
+const defaultPromotions: PromotionCard[] = [
   {
     id: "1",
     title: "紹介キャンペーン",
@@ -49,22 +49,36 @@ const initialPromotions: PromotionCard[] = [
 ]
 
 export default function Promotions() {
-  const [promotions, setPromotions] = useState<PromotionCard[]>(initialPromotions)
+  const [promotions, setPromotions] = useState<PromotionCard[]>(defaultPromotions)
   const [campaignText, setCampaignText] = useState("最大50%OFF！　春のお掃除キャンペーン実施中！")
-
-  const imageSections = useMemo(() => ["promotionsBackgroundImage"], [])
   const { imageUrls, isLoading, error } = useImageUrls()
 
   useEffect(() => {
-    const savedPromotions = localStorage.getItem("promotionsContent")
-    if (savedPromotions) {
-      setPromotions(JSON.parse(savedPromotions))
-    }
+    const fetchContent = async () => {
+      try {
+        const response = await fetch("/api/content?section=promotions")
+        if (response.ok) {
+          const data = await response.json()
+          if (data.content) {
+            setPromotions(data.content.promotions || defaultPromotions)
+            setCampaignText(data.content.campaignText || campaignText)
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching promotions content:", error)
+        // フォールバック: localStorageから取得
+        const savedPromotions = localStorage.getItem("promotionsContent")
+        if (savedPromotions) {
+          setPromotions(JSON.parse(savedPromotions))
+        }
 
-    const savedCampaignText = localStorage.getItem("promotionsCampaignText")
-    if (savedCampaignText) {
-      setCampaignText(savedCampaignText)
+        const savedCampaignText = localStorage.getItem("promotionsCampaignText")
+        if (savedCampaignText) {
+          setCampaignText(savedCampaignText)
+        }
+      }
     }
+    fetchContent()
   }, [])
 
   if (isLoading) {

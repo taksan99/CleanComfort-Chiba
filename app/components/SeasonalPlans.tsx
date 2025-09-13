@@ -14,7 +14,7 @@ const SeasonRibbon = ({ color }: { color: string }) => (
   </div>
 )
 
-const initialSeasonalPlans = [
+const defaultSeasonalPlans = [
   {
     season: "春",
     seasonKey: "spring",
@@ -58,25 +58,44 @@ const initialSeasonalPlans = [
 ]
 
 export default function SeasonalPlans() {
-  const [plans, setPlans] = useState(initialSeasonalPlans)
+  const [plans, setPlans] = useState(defaultSeasonalPlans)
   const { imageUrls, isLoading, error } = useImageUrls()
 
   useEffect(() => {
-    const savedPlans = localStorage.getItem("seasonalPlansContent")
-    if (savedPlans) {
+    const fetchContent = async () => {
       try {
-        const parsedPlans = JSON.parse(savedPlans)
-        setPlans(
-          initialSeasonalPlans.map((initialPlan, index) => ({
-            ...initialPlan,
-            title: parsedPlans[index]?.title || initialPlan.title,
-            description: parsedPlans[index]?.description || initialPlan.description,
-          })),
-        )
+        const response = await fetch("/api/content?section=seasonalPlans")
+        if (response.ok) {
+          const data = await response.json()
+          if (data.content) {
+            const updatedPlans = defaultSeasonalPlans.map((defaultPlan, index) => ({
+              ...defaultPlan,
+              title: data.content[index]?.title || defaultPlan.title,
+              description: data.content[index]?.description || defaultPlan.description,
+            }))
+            setPlans(updatedPlans)
+          }
+        }
       } catch (error) {
-        console.error("Error parsing saved plans:", error)
+        console.error("Error fetching seasonal plans content:", error)
+        // フォールバック: localStorageから取得
+        const savedPlans = localStorage.getItem("seasonalPlansContent")
+        if (savedPlans) {
+          try {
+            const parsedPlans = JSON.parse(savedPlans)
+            const updatedPlans = defaultSeasonalPlans.map((defaultPlan, index) => ({
+              ...defaultPlan,
+              title: parsedPlans[index]?.title || defaultPlan.title,
+              description: parsedPlans[index]?.description || defaultPlan.description,
+            }))
+            setPlans(updatedPlans)
+          } catch (parseError) {
+            console.error("Error parsing saved plans:", parseError)
+          }
+        }
       }
     }
+    fetchContent()
   }, [])
 
   if (isLoading) {

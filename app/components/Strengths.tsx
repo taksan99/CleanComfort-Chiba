@@ -15,7 +15,7 @@ interface Strength {
   iconColor: string
 }
 
-const strengths = [
+const defaultStrengths = [
   {
     title: "翌日対応、365日対応",
     description: "お急ぎの方も安心。年中無休でサービスを提供しています。",
@@ -47,14 +47,41 @@ const strengths = [
 ]
 
 export default function Strengths() {
-  const [localStrengths, setLocalStrengths] = useState<Strength[]>(strengths)
+  const [strengths, setStrengths] = useState<Strength[]>(defaultStrengths)
   const { imageUrls, isLoading, error } = useImageUrls()
 
   useEffect(() => {
-    const savedStrengths = localStorage.getItem("strengthsContent")
-    if (savedStrengths) {
-      setLocalStrengths(JSON.parse(savedStrengths))
+    const fetchContent = async () => {
+      try {
+        const response = await fetch("/api/content?section=strengths")
+        if (response.ok) {
+          const data = await response.json()
+          if (data.content) {
+            // データベースから取得したデータとデフォルトのアイコン・色情報をマージ
+            const updatedStrengths = defaultStrengths.map((defaultStrength, index) => ({
+              ...defaultStrength,
+              title: data.content[index]?.title || defaultStrength.title,
+              description: data.content[index]?.description || defaultStrength.description,
+            }))
+            setStrengths(updatedStrengths)
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching strengths content:", error)
+        // フォールバック: localStorageから取得
+        const savedStrengths = localStorage.getItem("strengthsContent")
+        if (savedStrengths) {
+          const parsedStrengths = JSON.parse(savedStrengths)
+          const updatedStrengths = defaultStrengths.map((defaultStrength, index) => ({
+            ...defaultStrength,
+            title: parsedStrengths[index]?.title || defaultStrength.title,
+            description: parsedStrengths[index]?.description || defaultStrength.description,
+          }))
+          setStrengths(updatedStrengths)
+        }
+      }
     }
+    fetchContent()
   }, [])
 
   if (isLoading) {
