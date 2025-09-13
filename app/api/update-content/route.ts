@@ -1,188 +1,182 @@
-import { NextResponse } from "next/server"
-import { sql } from "@vercel/postgres"
+import { type NextRequest, NextResponse } from "next/server"
+import { neon } from "@neondatabase/serverless"
 
-export async function POST(req: Request) {
+const sql = neon(process.env.DATABASE_URL!)
+
+export async function POST(request: NextRequest) {
   try {
-    const { type, data } = await req.json()
+    const { type, data } = await request.json()
 
     switch (type) {
       case "services":
-        await saveServicesContent(data)
+        // Handle services content update
+        const serviceTypes = ["houseCleaning", "airConCleaning", "handymanService"]
+
+        for (let i = 0; i < data.length && i < serviceTypes.length; i++) {
+          const service = data[i]
+          const serviceType = serviceTypes[i]
+
+          await sql`
+            INSERT INTO services_content (
+              service_type, title, description, items, features, option_service, updated_at
+            ) VALUES (
+              ${serviceType}, 
+              ${service.title}, 
+              ${service.description}, 
+              ${JSON.stringify(service.items)}, 
+              ${JSON.stringify(service.features)}, 
+              ${service.option}, 
+              CURRENT_TIMESTAMP
+            )
+            ON CONFLICT (service_type) 
+            DO UPDATE SET 
+              title = EXCLUDED.title,
+              description = EXCLUDED.description,
+              items = EXCLUDED.items,
+              features = EXCLUDED.features,
+              option_service = EXCLUDED.option_service,
+              updated_at = CURRENT_TIMESTAMP
+          `
+        }
         break
-      case "valuePropositions":
-        await saveValuePropositions(data)
+
+      case "valueProposition":
+        await sql`
+          INSERT INTO value_propositions (title, subtitle, items, updated_at)
+          VALUES (${data.title}, ${data.subtitle}, ${JSON.stringify(data.items)}, CURRENT_TIMESTAMP)
+          ON CONFLICT (id) 
+          DO UPDATE SET 
+            title = EXCLUDED.title,
+            subtitle = EXCLUDED.subtitle,
+            items = EXCLUDED.items,
+            updated_at = CURRENT_TIMESTAMP
+          WHERE value_propositions.id = 1
+        `
         break
+
       case "strengths":
-        await saveStrengths(data)
+        await sql`
+          INSERT INTO strengths (title, subtitle, items, updated_at)
+          VALUES (${data.title}, ${data.subtitle}, ${JSON.stringify(data.items)}, CURRENT_TIMESTAMP)
+          ON CONFLICT (id) 
+          DO UPDATE SET 
+            title = EXCLUDED.title,
+            subtitle = EXCLUDED.subtitle,
+            items = EXCLUDED.items,
+            updated_at = CURRENT_TIMESTAMP
+          WHERE strengths.id = 1
+        `
         break
+
       case "seasonalPlans":
-        await saveSeasonalPlans(data)
+        // Clear existing seasonal plans and insert new ones
+        await sql`DELETE FROM seasonal_plans`
+
+        for (const plan of data) {
+          await sql`
+            INSERT INTO seasonal_plans (season, title, description, items, price)
+            VALUES (${plan.season}, ${plan.title}, ${plan.description}, ${JSON.stringify(plan.items)}, ${plan.price})
+          `
+        }
         break
-      case "pricingOverview":
-        await savePricingOverview(data)
+
+      case "pricing":
+        // Clear existing pricing categories and insert new ones
+        await sql`DELETE FROM pricing_categories`
+
+        for (const category of data) {
+          await sql`
+            INSERT INTO pricing_categories (category_name, description, items)
+            VALUES (${category.name}, ${category.description}, ${JSON.stringify(category.items)})
+          `
+        }
         break
+
       case "reviews":
-        await saveReviews(data)
+        // Clear existing content reviews and insert new ones
+        await sql`DELETE FROM content_reviews`
+
+        for (const review of data) {
+          await sql`
+            INSERT INTO content_reviews (customer_name, rating, comment, service_type, is_featured)
+            VALUES (${review.name}, ${review.rating}, ${review.comment}, ${review.service}, ${review.featured || false})
+          `
+        }
         break
+
       default:
-        throw new Error(`Unknown content type: ${type}`)
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Invalid content type",
+          },
+          { status: 400 },
+        )
     }
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({
+      success: true,
+      message: `${type} content updated successfully`,
+    })
   } catch (error) {
-    console.error("Error saving content:", error)
-    return NextResponse.json({ error: "Failed to save content" }, { status: 500 })
+    console.error("Error updating content:", error)
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Failed to update content",
+      },
+      { status: 500 },
+    )
   }
 }
 
-async function saveServicesContent(services: any[]) {
-  const serviceTypes = ["houseCleaning", "airConCleaning", "handymanService"]
-
-  for (let i = 0; i < services.length; i++) {
-    const service = services[i]
-    const serviceType = serviceTypes[i]
-
-    await sql`
-      INSERT INTO services_content (service_type, title, description, items, features, option_service)
-      VALUES (${serviceType}, ${service.title}, ${service.description}, ${JSON.stringify(service.items)}, ${JSON.stringify(service.features)}, ${service.option})
-      ON CONFLICT (service_type) DO UPDATE SET
-        title = ${service.title},
-        description = ${service.description},
-        items = ${JSON.stringify(service.items)},
-        features = ${JSON.stringify(service.features)},
-        option_service = ${service.option},
-        updated_at = NOW()
-    `
-  }
-}
-
-async function saveValuePropositions(valueProps: any[]) {
-  for (let i = 0; i < valueProps.length; i++) {
-    const prop = valueProps[i]
-
-    await sql`
-      INSERT INTO value_propositions (position, title, description, example, benefit)
-      VALUES (${i}, ${prop.title}, ${prop.description}, ${prop.example}, ${prop.benefit})
-      ON CONFLICT (position) DO UPDATE SET
-        title = ${prop.title},
-        description = ${prop.description},
-        example = ${prop.example},
-        benefit = ${prop.benefit},
-        updated_at = NOW()
-    `
-  }
-}
-
-async function saveStrengths(strengths: any[]) {
-  for (let i = 0; i < strengths.length; i++) {
-    const strength = strengths[i]
-
-    await sql`
-      INSERT INTO strengths (position, title, description)
-      VALUES (${i}, ${strength.title}, ${strength.description})
-      ON CONFLICT (position) DO UPDATE SET
-        title = ${strength.title},
-        description = ${strength.description},
-        updated_at = NOW()
-    `
-  }
-}
-
-async function saveSeasonalPlans(plans: any[]) {
-  const seasons = ["春", "夏", "秋", "冬"]
-
-  for (let i = 0; i < plans.length; i++) {
-    const plan = plans[i]
-    const season = seasons[i] || plan.season
-
-    await sql`
-      INSERT INTO seasonal_plans (season, title, description)
-      VALUES (${season}, ${plan.title}, ${plan.description})
-      ON CONFLICT (season) DO UPDATE SET
-        title = ${plan.title},
-        description = ${plan.description},
-        updated_at = NOW()
-    `
-  }
-}
-
-async function savePricingOverview(categories: any[]) {
-  for (let i = 0; i < categories.length; i++) {
-    const category = categories[i]
-
-    await sql`
-      INSERT INTO pricing_categories (position, category, icon, color, text_color, border_color, items)
-      VALUES (${i}, ${category.category}, ${category.icon}, ${category.color}, ${category.textColor}, ${category.borderColor}, ${JSON.stringify(category.items)})
-      ON CONFLICT (position) DO UPDATE SET
-        category = ${category.category},
-        icon = ${category.icon},
-        color = ${category.color},
-        text_color = ${category.textColor},
-        border_color = ${category.borderColor},
-        items = ${JSON.stringify(category.items)},
-        updated_at = NOW()
-    `
-  }
-}
-
-async function saveReviews(reviews: any[]) {
-  for (let i = 0; i < reviews.length; i++) {
-    const review = reviews[i]
-
-    await sql`
-      INSERT INTO reviews (position, name, age, location, rating, comment, service)
-      VALUES (${i}, ${review.name}, ${review.age}, ${review.location}, ${review.rating}, ${review.comment}, ${review.service})
-      ON CONFLICT (position) DO UPDATE SET
-        name = ${review.name},
-        age = ${review.age},
-        location = ${review.location},
-        rating = ${review.rating},
-        comment = ${review.comment},
-        service = ${review.service},
-        updated_at = NOW()
-    `
-  }
-}
-
-export async function GET(req: Request) {
+export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url)
+    const { searchParams } = new URL(request.url)
     const type = searchParams.get("type")
 
-    let result
+    let data
     switch (type) {
       case "services":
-        result = await sql`SELECT * FROM services_content ORDER BY service_type`
+        data = await sql`SELECT * FROM services_content ORDER BY service_type`
         break
-      case "valuePropositions":
-        result = await sql`SELECT * FROM value_propositions ORDER BY position`
+      case "valueProposition":
+        data = await sql`SELECT * FROM value_propositions LIMIT 1`
         break
       case "strengths":
-        result = await sql`SELECT * FROM strengths ORDER BY position`
+        data = await sql`SELECT * FROM strengths LIMIT 1`
         break
       case "seasonalPlans":
-        result = await sql`SELECT * FROM seasonal_plans ORDER BY 
-          CASE season 
-            WHEN '春' THEN 1 
-            WHEN '夏' THEN 2 
-            WHEN '秋' THEN 3 
-            WHEN '冬' THEN 4 
-            ELSE 5 
-          END`
+        data = await sql`SELECT * FROM seasonal_plans ORDER BY id`
         break
-      case "pricingOverview":
-        result = await sql`SELECT * FROM pricing_categories ORDER BY position`
+      case "pricing":
+        data = await sql`SELECT * FROM pricing_categories ORDER BY id`
         break
       case "reviews":
-        result = await sql`SELECT * FROM reviews ORDER BY position`
+        data = await sql`SELECT * FROM content_reviews ORDER BY created_at DESC`
         break
       default:
-        throw new Error(`Unknown content type: ${type}`)
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Invalid content type",
+          },
+          { status: 400 },
+        )
     }
 
-    return NextResponse.json({ success: true, data: result.rows })
+    return NextResponse.json({
+      success: true,
+      data,
+    })
   } catch (error) {
     console.error("Error fetching content:", error)
-    return NextResponse.json({ error: "Failed to fetch content" }, { status: 500 })
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Failed to fetch content",
+      },
+      { status: 500 },
+    )
   }
 }

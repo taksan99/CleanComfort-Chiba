@@ -3,126 +3,125 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Plus, Trash2 } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 
-export interface PricingCategory {
-  category: string
-  icon: string
-  color: string
-  textColor: string
-  borderColor: string
-  items: { service: string; price: string }[]
+interface PricingItem {
+  name: string
+  price: string
+  description: string
 }
 
-const initialPricingData: PricingCategory[] = [
+interface PricingCategory {
+  name: string
+  description: string
+  items: PricingItem[]
+}
+
+const defaultCategories: PricingCategory[] = [
   {
-    category: "掃除サービス",
-    icon: "Droplet",
-    color: "from-blue-500 to-cyan-400",
-    textColor: "text-blue-700",
-    borderColor: "border-blue-500",
+    name: "ハウスクリーニング",
+    description: "住宅の各部分を専門的にクリーニング",
     items: [
-      { service: "水回り5点セット（浴室/キッチン/レンジフード/トイレ/洗面台）", price: "68,000円～" },
-      { service: "浴室、キッチン、レンジフード", price: "20,000円～" },
-      { service: "トイレ", price: "10,000円～" },
-      { service: "ガラス・サッシクリーニング（3枚）", price: "10,000円～" },
-      { service: "ベランダ", price: "6,000円～" },
+      { name: "水回り5点セット", price: "68,000円～", description: "洗面所・キッチン・浴室・トイレ・洗濯機周り" },
+      { name: "キッチン", price: "20,000円～", description: "レンジフード・コンロ・シンク" },
+      { name: "浴室", price: "20,000円～", description: "床・壁・天井・鏡・蛇口" },
+      { name: "トイレ", price: "10,000円～", description: "便器・床・壁・換気扇" },
     ],
   },
   {
-    category: "エアコン掃除",
-    icon: "Wind",
-    color: "from-green-500 to-emerald-400",
-    textColor: "text-green-700",
-    borderColor: "border-green-500",
+    name: "エアコンクリーニング",
+    description: "エアコンの種類に応じた専門クリーニング",
     items: [
-      { service: "通常エアコンクリーニング", price: "12,000円～" },
-      { service: "お掃除機能付きエアコン", price: "22,000円～" },
-      { service: "ご家庭用埋込式エアコン", price: "25,000円～" },
-      { service: "業務用4方向エアコン", price: "33,000円～" },
-      { service: "室外機", price: "6,000円～" },
-    ],
-  },
-  {
-    category: "便利屋さんサービス",
-    icon: "Wrench",
-    color: "from-yellow-500 to-amber-400",
-    textColor: "text-yellow-700",
-    borderColor: "border-yellow-500",
-    items: [
-      { service: "害獣・害虫駆除", price: "10,000円～" },
-      { service: "墓参り代行", price: "10,000円～" },
-      { service: "ペットの世話（1回）", price: "3,000円～" },
-      { service: "友達代行（1時間）", price: "5,000円～" },
-      { service: "庭の手入れ", price: "8,000円～" },
-      { service: "その他、どんなことでも！", price: "要相談" },
+      { name: "通常エアコン", price: "12,000円～", description: "壁掛け型エアコン" },
+      { name: "お掃除機能付き", price: "22,000円～", description: "自動お掃除機能付きエアコン" },
+      { name: "業務用エアコン", price: "33,000円～", description: "4方向タイプ" },
     ],
   },
 ]
 
 export default function PricingOverviewEditor() {
-  const [pricingData, setPricingData] = useState<PricingCategory[]>(initialPricingData)
+  const [categories, setCategories] = useState<PricingCategory[]>(defaultCategories)
   const [isLoading, setIsLoading] = useState(false)
   const { toast } = useToast()
 
   useEffect(() => {
-    const fetchPricingData = async () => {
+    const fetchData = async () => {
       try {
-        const response = await fetch("/api/update-content?type=pricingOverview")
-        const data = await response.json()
-        if (data.success && data.data.length > 0) {
-          setPricingData(
-            data.data.map((item: any) => ({
-              category: item.category,
-              icon: item.icon,
-              color: item.color,
-              textColor: item.text_color,
-              borderColor: item.border_color,
-              items: item.items,
-            })),
-          )
+        const response = await fetch("/api/update-content?type=pricing")
+        const result = await response.json()
+        if (result.success && result.data.length > 0) {
+          const dbCategories = result.data.map((cat: any) => ({
+            name: cat.category_name,
+            description: cat.description,
+            items: cat.items,
+          }))
+          setCategories(dbCategories)
         }
       } catch (error) {
         console.error("Error fetching pricing data:", error)
         toast({
           title: "エラー",
-          description: "料金体系の読み込みに失敗しました。",
+          description: "料金データの読み込みに失敗しました。",
           variant: "destructive",
         })
       }
     }
 
-    fetchPricingData()
+    fetchData()
   }, [toast])
 
-  const handleCategoryChange = (index: number, field: keyof PricingCategory, value: string) => {
-    const newPricingData = [...pricingData]
-    newPricingData[index] = { ...newPricingData[index], [field]: value }
-    setPricingData(newPricingData)
+  const handleCategoryChange = (index: number, field: keyof Omit<PricingCategory, "items">, value: string) => {
+    setCategories((prev) => prev.map((cat, i) => (i === index ? { ...cat, [field]: value } : cat)))
   }
 
-  const handleItemChange = (categoryIndex: number, itemIndex: number, field: "service" | "price", value: string) => {
-    const newPricingData = [...pricingData]
-    newPricingData[categoryIndex].items[itemIndex] = {
-      ...newPricingData[categoryIndex].items[itemIndex],
-      [field]: value,
-    }
-    setPricingData(newPricingData)
+  const handleItemChange = (categoryIndex: number, itemIndex: number, field: keyof PricingItem, value: string) => {
+    setCategories((prev) =>
+      prev.map((cat, i) =>
+        i === categoryIndex
+          ? {
+              ...cat,
+              items: cat.items.map((item, j) => (j === itemIndex ? { ...item, [field]: value } : item)),
+            }
+          : cat,
+      ),
+    )
+  }
+
+  const handleAddCategory = () => {
+    setCategories((prev) => [...prev, { name: "", description: "", items: [] }])
+  }
+
+  const handleRemoveCategory = (index: number) => {
+    setCategories((prev) => prev.filter((_, i) => i !== index))
   }
 
   const handleAddItem = (categoryIndex: number) => {
-    const newPricingData = [...pricingData]
-    newPricingData[categoryIndex].items.push({ service: "", price: "" })
-    setPricingData(newPricingData)
+    setCategories((prev) =>
+      prev.map((cat, i) =>
+        i === categoryIndex
+          ? {
+              ...cat,
+              items: [...cat.items, { name: "", price: "", description: "" }],
+            }
+          : cat,
+      ),
+    )
   }
 
   const handleRemoveItem = (categoryIndex: number, itemIndex: number) => {
-    const newPricingData = [...pricingData]
-    newPricingData[categoryIndex].items.splice(itemIndex, 1)
-    setPricingData(newPricingData)
+    setCategories((prev) =>
+      prev.map((cat, i) =>
+        i === categoryIndex
+          ? {
+              ...cat,
+              items: cat.items.filter((_, j) => j !== itemIndex),
+            }
+          : cat,
+      ),
+    )
   }
 
   const handleSave = async () => {
@@ -134,8 +133,8 @@ export default function PricingOverviewEditor() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          type: "pricingOverview",
-          data: pricingData,
+          type: "pricing",
+          data: categories,
         }),
       })
 
@@ -143,16 +142,16 @@ export default function PricingOverviewEditor() {
       if (result.success) {
         toast({
           title: "保存完了",
-          description: "料金体系が正常に保存されました。",
+          description: "料金設定が正常に保存されました。",
         })
       } else {
         throw new Error(result.error || "Save failed")
       }
     } catch (error) {
-      console.error("Error saving pricing data:", error)
+      console.error("Error saving pricing:", error)
       toast({
         title: "エラー",
-        description: "料金体系の保存に失敗しました。",
+        description: "料金設定の保存に失敗しました。",
         variant: "destructive",
       })
     } finally {
@@ -162,62 +161,81 @@ export default function PricingOverviewEditor() {
 
   return (
     <div className="space-y-4">
-      <Tabs defaultValue="category0">
-        <TabsList>
-          {pricingData.map((category, index) => (
-            <TabsTrigger key={index} value={`category${index}`}>
-              {category.category}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-        {pricingData.map((category, categoryIndex) => (
-          <TabsContent key={categoryIndex} value={`category${categoryIndex}`}>
-            <Card>
-              <CardHeader>
-                <CardTitle>{category.category}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <label className="block mb-2">カテゴリー名</label>
-                  <Input
-                    value={category.category}
-                    onChange={(e) => handleCategoryChange(categoryIndex, "category", e.target.value)}
-                    placeholder="カテゴリー名"
-                  />
+      {categories.map((category, categoryIndex) => (
+        <Card key={categoryIndex}>
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <CardTitle>カテゴリー {categoryIndex + 1}</CardTitle>
+              <Button variant="destructive" size="sm" onClick={() => handleRemoveCategory(categoryIndex)}>
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <label className="block mb-2 font-medium">カテゴリー名</label>
+              <Input
+                value={category.name}
+                onChange={(e) => handleCategoryChange(categoryIndex, "name", e.target.value)}
+                placeholder="カテゴリー名"
+              />
+            </div>
+
+            <div>
+              <label className="block mb-2 font-medium">説明</label>
+              <Textarea
+                value={category.description}
+                onChange={(e) => handleCategoryChange(categoryIndex, "description", e.target.value)}
+                placeholder="カテゴリーの説明"
+                rows={2}
+              />
+            </div>
+
+            <div>
+              <label className="block mb-2 font-medium">料金項目</label>
+              {category.items.map((item, itemIndex) => (
+                <div key={itemIndex} className="border p-3 rounded mb-2">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="font-medium">項目 {itemIndex + 1}</span>
+                    <Button variant="destructive" size="sm" onClick={() => handleRemoveItem(categoryIndex, itemIndex)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                    <Input
+                      value={item.name}
+                      onChange={(e) => handleItemChange(categoryIndex, itemIndex, "name", e.target.value)}
+                      placeholder="サービス名"
+                    />
+                    <Input
+                      value={item.price}
+                      onChange={(e) => handleItemChange(categoryIndex, itemIndex, "price", e.target.value)}
+                      placeholder="料金"
+                    />
+                    <Input
+                      value={item.description}
+                      onChange={(e) => handleItemChange(categoryIndex, itemIndex, "description", e.target.value)}
+                      placeholder="説明"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="block mb-2">サービス項目</label>
-                  {category.items.map((item, itemIndex) => (
-                    <div key={itemIndex} className="flex space-x-2 mb-2">
-                      <Input
-                        value={item.service}
-                        onChange={(e) => handleItemChange(categoryIndex, itemIndex, "service", e.target.value)}
-                        placeholder="サービス名"
-                      />
-                      <Input
-                        value={item.price}
-                        onChange={(e) => handleItemChange(categoryIndex, itemIndex, "price", e.target.value)}
-                        placeholder="価格"
-                      />
-                      <Button
-                        variant="destructive"
-                        size="icon"
-                        onClick={() => handleRemoveItem(categoryIndex, itemIndex)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                  <Button variant="outline" onClick={() => handleAddItem(categoryIndex)} className="mt-2">
-                    <Plus className="h-4 w-4 mr-2" />
-                    項目を追加
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        ))}
-      </Tabs>
+              ))}
+
+              <Button variant="outline" onClick={() => handleAddItem(categoryIndex)} className="mt-2">
+                <Plus className="h-4 w-4 mr-2" />
+                項目を追加
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+
+      <Button variant="outline" onClick={handleAddCategory}>
+        <Plus className="h-4 w-4 mr-2" />
+        カテゴリーを追加
+      </Button>
+
       <Button onClick={handleSave} disabled={isLoading}>
         {isLoading ? "保存中..." : "保存"}
       </Button>

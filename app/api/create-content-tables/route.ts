@@ -1,20 +1,22 @@
-import { NextResponse } from "next/server"
-import { sql } from "@vercel/postgres"
+import { type NextRequest, NextResponse } from "next/server"
+import { neon } from "@neondatabase/serverless"
 
-export async function POST() {
+const sql = neon(process.env.DATABASE_URL!)
+
+export async function POST(request: NextRequest) {
   try {
     // Create services_content table
     await sql`
       CREATE TABLE IF NOT EXISTS services_content (
         id SERIAL PRIMARY KEY,
-        service_type VARCHAR(50) UNIQUE NOT NULL,
+        service_type VARCHAR(50) NOT NULL UNIQUE,
         title VARCHAR(255) NOT NULL,
         description TEXT,
-        items JSONB,
-        features JSONB,
+        items JSONB DEFAULT '[]',
+        features JSONB DEFAULT '[]',
         option_service TEXT,
-        created_at TIMESTAMP DEFAULT NOW(),
-        updated_at TIMESTAMP DEFAULT NOW()
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `
 
@@ -22,13 +24,11 @@ export async function POST() {
     await sql`
       CREATE TABLE IF NOT EXISTS value_propositions (
         id SERIAL PRIMARY KEY,
-        position INTEGER UNIQUE NOT NULL,
         title VARCHAR(255) NOT NULL,
-        description TEXT,
-        example TEXT,
-        benefit TEXT,
-        created_at TIMESTAMP DEFAULT NOW(),
-        updated_at TIMESTAMP DEFAULT NOW()
+        subtitle TEXT,
+        items JSONB DEFAULT '[]',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `
 
@@ -36,11 +36,11 @@ export async function POST() {
     await sql`
       CREATE TABLE IF NOT EXISTS strengths (
         id SERIAL PRIMARY KEY,
-        position INTEGER UNIQUE NOT NULL,
         title VARCHAR(255) NOT NULL,
-        description TEXT,
-        created_at TIMESTAMP DEFAULT NOW(),
-        updated_at TIMESTAMP DEFAULT NOW()
+        subtitle TEXT,
+        items JSONB DEFAULT '[]',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `
 
@@ -48,11 +48,13 @@ export async function POST() {
     await sql`
       CREATE TABLE IF NOT EXISTS seasonal_plans (
         id SERIAL PRIMARY KEY,
-        season VARCHAR(20) UNIQUE NOT NULL,
+        season VARCHAR(50) NOT NULL,
         title VARCHAR(255) NOT NULL,
         description TEXT,
-        created_at TIMESTAMP DEFAULT NOW(),
-        updated_at TIMESTAMP DEFAULT NOW()
+        items JSONB DEFAULT '[]',
+        price VARCHAR(100),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `
 
@@ -60,37 +62,50 @@ export async function POST() {
     await sql`
       CREATE TABLE IF NOT EXISTS pricing_categories (
         id SERIAL PRIMARY KEY,
-        position INTEGER UNIQUE NOT NULL,
-        category VARCHAR(255) NOT NULL,
-        icon VARCHAR(50),
-        color VARCHAR(100),
-        text_color VARCHAR(50),
-        border_color VARCHAR(50),
-        items JSONB,
-        created_at TIMESTAMP DEFAULT NOW(),
-        updated_at TIMESTAMP DEFAULT NOW()
+        category_name VARCHAR(255) NOT NULL,
+        description TEXT,
+        items JSONB DEFAULT '[]',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `
 
-    // Create reviews table
+    // Create content_reviews table (different from existing reviews table)
     await sql`
-      CREATE TABLE IF NOT EXISTS reviews (
+      CREATE TABLE IF NOT EXISTS content_reviews (
         id SERIAL PRIMARY KEY,
-        position INTEGER UNIQUE NOT NULL,
-        name VARCHAR(255) NOT NULL,
-        age INTEGER,
-        location VARCHAR(255),
+        customer_name VARCHAR(255) NOT NULL,
         rating INTEGER CHECK (rating >= 1 AND rating <= 5),
         comment TEXT,
-        service VARCHAR(255),
-        created_at TIMESTAMP DEFAULT NOW(),
-        updated_at TIMESTAMP DEFAULT NOW()
+        service_type VARCHAR(100),
+        date_posted DATE DEFAULT CURRENT_DATE,
+        is_featured BOOLEAN DEFAULT false,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `
 
-    return NextResponse.json({ success: true, message: "Content tables created successfully" })
+    return NextResponse.json({
+      success: true,
+      message: "Content tables created successfully",
+    })
   } catch (error) {
     console.error("Error creating content tables:", error)
-    return NextResponse.json({ error: "Failed to create content tables" }, { status: 500 })
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Failed to create content tables",
+      },
+      { status: 500 },
+    )
   }
+}
+
+export async function GET() {
+  return NextResponse.json(
+    {
+      message: "Use POST method to create content tables",
+    },
+    { status: 405 },
+  )
 }
