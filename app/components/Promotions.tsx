@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Users, Repeat, Sparkles } from "lucide-react"
 import AnimatedSection from "./AnimatedSection"
@@ -24,48 +24,57 @@ interface PromotionCard {
   variant: "A" | "B"
 }
 
-const initialPromotions: PromotionCard[] = [
-  {
-    id: "1",
-    title: "紹介キャンペーン",
-    description: "お知り合いをご紹介いただくと、次回のご利用時に",
-    discount: "10% OFF",
-    note: "※ 紹介されたお客様が実際にサービスをご利用された場合に適用されます。",
-    startDate: "2023-01-01",
-    endDate: "2025-12-31",
-    isActive: true,
-    variant: "A",
-  },
-  {
-    id: "2",
-    title: "リピーター特典",
-    description: "年2回以上ご利用いただくと、2回目以降のご利用時に",
-    discount: "5% OFF",
-    startDate: "2023-01-01",
-    endDate: "2025-12-31",
-    isActive: true,
-    variant: "A",
-  },
-]
+interface PromotionsData {
+  campaignText: string
+  promotions: PromotionCard[]
+}
+
+const defaultPromotions: PromotionsData = {
+  campaignText: "最大50%OFF！　春のお掃除キャンペーン実施中！",
+  promotions: [
+    {
+      id: "1",
+      title: "紹介キャンペーン",
+      description: "お知り合いをご紹介いただくと、次回のご利用時に",
+      discount: "10% OFF",
+      note: "※ 紹介されたお客様が実際にサービスをご利用された場合に適用されます。",
+      startDate: "2023-01-01",
+      endDate: "2025-12-31",
+      isActive: true,
+      variant: "A",
+    },
+    {
+      id: "2",
+      title: "リピーター特典",
+      description: "年2回以上ご利用いただくと、2回目以降のご利用時に",
+      discount: "5% OFF",
+      startDate: "2023-01-01",
+      endDate: "2025-12-31",
+      isActive: true,
+      variant: "A",
+    },
+  ],
+}
 
 export default function Promotions() {
-  const [promotions, setPromotions] = useState<PromotionCard[]>(initialPromotions)
-  const [campaignText, setCampaignText] = useState("最大50%OFF！　春のお掃除キャンペーン実施中！")
-
-  const imageSections = useMemo(() => ["promotionsBackgroundImage"], [])
+  const [promotionsData, setPromotionsData] = useState<PromotionsData>(defaultPromotions)
   const { imageUrls, isLoading, error } = useImageUrls()
 
   useEffect(() => {
-    const savedPromotions = localStorage.getItem("promotionsContent")
-    if (savedPromotions) {
-      setPromotions(JSON.parse(savedPromotions))
-    }
-
-    const savedCampaignText = localStorage.getItem("promotionsCampaignText")
-    if (savedCampaignText) {
-      setCampaignText(savedCampaignText)
-    }
+    fetchContent()
   }, [])
+
+  const fetchContent = async () => {
+    try {
+      const response = await fetch("/api/content?section=promotions")
+      const content = await response.json()
+      if (content && typeof content === "object") {
+        setPromotionsData(content)
+      }
+    } catch (error) {
+      console.error("Error fetching promotions:", error)
+    }
+  }
 
   if (isLoading) {
     return <div>Loading...</div>
@@ -78,7 +87,7 @@ export default function Promotions() {
   const backgroundImage = imageUrls.promotionsBackgroundImage?.url || "/placeholder.svg"
 
   const currentDate = new Date().toISOString().split("T")[0]
-  const activePromotions = promotions.filter(
+  const activePromotions = promotionsData.promotions.filter(
     (promo) => promo.isActive && promo.startDate <= currentDate && promo.endDate >= currentDate,
   )
 
@@ -154,7 +163,7 @@ export default function Promotions() {
               <CardContent className="p-4">
                 <Sparkles className="h-6 w-6 inline-block mr-2" />
                 <span className="text-lg font-semibold" style={{ textShadow: "1px 1px 2px rgba(0,0,0,0.2)" }}>
-                  {campaignText}
+                  {promotionsData.campaignText}
                 </span>
               </CardContent>
             </Card>

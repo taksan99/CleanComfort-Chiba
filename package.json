@@ -28,7 +28,7 @@
     "@radix-ui/react-slot": "^1.0.2",
     "@radix-ui/react-switch": "^1.2.6",
     "@radix-ui/react-tabs": "^1.0.4",
-    "@radix-ui/react-toast": "^1.1.5",
+    "@radix-ui/react-toast": "latest",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",

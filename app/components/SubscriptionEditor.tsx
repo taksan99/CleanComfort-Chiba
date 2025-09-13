@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useToast } from "@/components/ui/use-toast"
 
 interface SubscriptionPlan {
   name: string
@@ -74,13 +75,24 @@ const initialPlans: SubscriptionPlan[] = [
 
 export default function SubscriptionEditor() {
   const [plans, setPlans] = useState<SubscriptionPlan[]>(initialPlans)
+  const [isLoading, setIsLoading] = useState(false)
+  const { toast } = useToast()
 
   useEffect(() => {
-    const savedPlans = localStorage.getItem("subscriptionPlans")
-    if (savedPlans) {
-      setPlans(JSON.parse(savedPlans))
-    }
+    fetchPlans()
   }, [])
+
+  const fetchPlans = async () => {
+    try {
+      const response = await fetch("/api/content?section=subscriptionPlans")
+      const content = await response.json()
+      if (content && Array.isArray(content)) {
+        setPlans(content)
+      }
+    } catch (error) {
+      console.error("Error fetching subscription plans:", error)
+    }
+  }
 
   const handlePlanChange = (index: number, field: keyof SubscriptionPlan, value: string | string[]) => {
     const newPlans = [...plans]
@@ -92,9 +104,38 @@ export default function SubscriptionEditor() {
     setPlans(newPlans)
   }
 
-  const handleSave = () => {
-    localStorage.setItem("subscriptionPlans", JSON.stringify(plans))
-    alert("サブスクリプションプランの内容が保存されました。")
+  const handleSave = async () => {
+    setIsLoading(true)
+    try {
+      const response = await fetch("/api/content", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          section: "subscriptionPlans",
+          content: plans,
+        }),
+      })
+
+      if (response.ok) {
+        toast({
+          title: "保存完了",
+          description: "サブスクリプションプランが正常に保存されました。",
+        })
+      } else {
+        throw new Error("Failed to save")
+      }
+    } catch (error) {
+      console.error("Error saving subscription plans:", error)
+      toast({
+        title: "エラー",
+        description: "保存に失敗しました。",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -184,7 +225,9 @@ export default function SubscriptionEditor() {
           </TabsContent>
         ))}
       </Tabs>
-      <Button onClick={handleSave}>保存</Button>
+      <Button onClick={handleSave} disabled={isLoading}>
+        {isLoading ? "保存中..." : "保存"}
+      </Button>
     </div>
   )
 }

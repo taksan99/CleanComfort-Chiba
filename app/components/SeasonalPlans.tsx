@@ -8,18 +8,33 @@ import { useImageUrls } from "@/app/hooks/useImageUrls"
 import ImageWithFallback from "./ImageWithFallback"
 import ErrorMessage from "./ErrorMessage"
 
-const SeasonRibbon = ({ color }: { color: string }) => (
-  <div className={`absolute top-0 right-0 w-16 h-16 ${color} overflow-hidden`}>
-    <div className="absolute top-0 right-0 transform translate-x-1/2 -translate-y-1/2 rotate-45 w-16 h-8 bg-white"></div>
-  </div>
-)
+interface SeasonalPlan {
+  title: string
+  description: string
+}
 
-const initialSeasonalPlans = [
+const defaultPlans = [
   {
-    season: "春",
-    seasonKey: "spring",
     title: "花粉対策セット",
     description: "エアコン＋換気扇クリーニング",
+  },
+  {
+    title: "猛暑対策プラン",
+    description: "エアコン全台クリーニング または 浴室クリーニング",
+  },
+  {
+    title: "寒さ対策セット",
+    description: "エアコン＋窓ガラスクリーニング",
+  },
+  {
+    title: "大掃除応援パック",
+    description: "エアコン＋リビングクリーニング（床清掃・ワックスがけ）",
+  },
+]
+
+const planConfig = [
+  {
+    season: "春",
     icon: Flower,
     color: "text-pink-500",
     ribbonColor: "bg-pink-500",
@@ -27,9 +42,6 @@ const initialSeasonalPlans = [
   },
   {
     season: "夏",
-    seasonKey: "summer",
-    title: "夏の快適プラン",
-    description: "エアコン全台クリーニング または 浴室クリーニング",
     icon: Sun,
     color: "text-yellow-500",
     ribbonColor: "bg-yellow-500",
@@ -37,9 +49,6 @@ const initialSeasonalPlans = [
   },
   {
     season: "秋",
-    seasonKey: "autumn",
-    title: "寒さ対策セット",
-    description: "エアコン＋窓ガラスクリーニング",
     icon: Leaf,
     color: "text-orange-500",
     ribbonColor: "bg-orange-500",
@@ -47,9 +56,6 @@ const initialSeasonalPlans = [
   },
   {
     season: "冬",
-    seasonKey: "winter",
-    title: "冬の快適プラン",
-    description: "エアコン＋リビングクリーニング（床清掃・ワックスがけ）",
     icon: Snowflake,
     color: "text-blue-500",
     ribbonColor: "bg-blue-500",
@@ -57,27 +63,31 @@ const initialSeasonalPlans = [
   },
 ]
 
+const SeasonRibbon = ({ color }: { color: string }) => (
+  <div className={`absolute top-0 right-0 w-16 h-16 ${color} overflow-hidden`}>
+    <div className="absolute top-0 right-0 transform translate-x-1/2 -translate-y-1/2 rotate-45 w-16 h-8 bg-white"></div>
+  </div>
+)
+
 export default function SeasonalPlans() {
-  const [plans, setPlans] = useState(initialSeasonalPlans)
+  const [plans, setPlans] = useState<SeasonalPlan[]>(defaultPlans)
   const { imageUrls, isLoading, error } = useImageUrls()
 
   useEffect(() => {
-    const savedPlans = localStorage.getItem("seasonalPlansContent")
-    if (savedPlans) {
-      try {
-        const parsedPlans = JSON.parse(savedPlans)
-        setPlans(
-          initialSeasonalPlans.map((initialPlan, index) => ({
-            ...initialPlan,
-            title: parsedPlans[index]?.title || initialPlan.title,
-            description: parsedPlans[index]?.description || initialPlan.description,
-          })),
-        )
-      } catch (error) {
-        console.error("Error parsing saved plans:", error)
-      }
-    }
+    fetchContent()
   }, [])
+
+  const fetchContent = async () => {
+    try {
+      const response = await fetch("/api/content?section=seasonalPlans")
+      const content = await response.json()
+      if (content && Array.isArray(content)) {
+        setPlans(content)
+      }
+    } catch (error) {
+      console.error("Error fetching seasonal plans:", error)
+    }
+  }
 
   if (isLoading) {
     return <div>Loading...</div>
@@ -104,21 +114,22 @@ export default function SeasonalPlans() {
         </h2>
         <AnimatedSection>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {plans.map((plan) => {
-              const Icon = plan.icon
+            {plans.map((plan, index) => {
+              const config = planConfig[index]
+              const Icon = config.icon
               return (
-                <Card key={plan.season} className="h-full relative overflow-hidden bg-white bg-opacity-90">
-                  <SeasonRibbon color={plan.ribbonColor} />
+                <Card key={index} className="h-full relative overflow-hidden bg-white bg-opacity-90">
+                  <SeasonRibbon color={config.ribbonColor} />
                   <ImageWithFallback
-                    src={imageUrls[plan.imageKey]?.url || "/placeholder.svg"}
+                    src={imageUrls[config.imageKey]?.url || "/placeholder.svg"}
                     fallbackSrc="/placeholder.svg"
-                    alt={`${plan.season}のおすすめプラン`}
+                    alt={`${config.season}のおすすめプラン`}
                     width={300}
                     height={200}
                     className="w-full h-48 object-cover"
                   />
                   <CardHeader>
-                    <div className={`${plan.color} mb-4`}>
+                    <div className={`${config.color} mb-4`}>
                       <Icon className="h-12 w-12" />
                     </div>
                     <CardTitle style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)" }}>{plan.title}</CardTitle>

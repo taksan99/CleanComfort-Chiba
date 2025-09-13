@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Plus, Trash2 } from "lucide-react"
 import ImageUploader from "@/app/components/ImageUploader"
 import { useImageUrls } from "../hooks/useImageUrls"
+import { useToast } from "@/components/ui/use-toast"
 
 interface Review {
   name: string
@@ -72,14 +73,25 @@ const initialReviews: Review[] = [
 export default function ReviewsEditor() {
   const [reviews, setReviews] = useState<Review[]>(initialReviews)
   const [isUploading, setIsUploading] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
   const { imageUrls, refreshImages } = useImageUrls()
+  const { toast } = useToast()
 
   useEffect(() => {
-    const savedReviews = localStorage.getItem("reviewsContent")
-    if (savedReviews) {
-      setReviews(JSON.parse(savedReviews))
-    }
+    fetchReviews()
   }, [])
+
+  const fetchReviews = async () => {
+    try {
+      const response = await fetch("/api/content?section=reviews")
+      const content = await response.json()
+      if (content && Array.isArray(content)) {
+        setReviews(content)
+      }
+    } catch (error) {
+      console.error("Error fetching reviews:", error)
+    }
+  }
 
   const handleChange = (index: number, field: keyof Review, value: string | number) => {
     const newReviews = [...reviews]
@@ -97,42 +109,81 @@ export default function ReviewsEditor() {
     setReviews(newReviews)
   }
 
-  const handleSave = () => {
-    localStorage.setItem("reviewsContent", JSON.stringify(reviews))
-    alert("お客様の声の内容が保存されました。")
-  }
-
-  const handleImageUpload = async (file: File, index: number) => {
-    setIsUploading(true)
+  const handleSave = async () => {
+    setIsLoading(true)
     try {
-      const formData = new FormData()
-      formData.append("file", file)
-      formData.append("isAdmin", "true")
-      formData.append("section", `review${index}`)
-
-      const response = await fetch("/api/upload", {
+      const response = await fetch("/api/content", {
         method: "POST",
-        body: formData,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          section: "reviews",
+          content: reviews,
+        }),
       })
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-
-      const data = await response.json()
-      if (data.success) {
-        alert("画像が正常にアップロードされました。")
-        refreshImages() // 画像URLを更新
+      if (response.ok) {
+        toast({
+          title: "保存完了",
+          description: "お客様の声が正常に保存されました。",
+        })
       } else {
-        throw new Error("Image upload failed")
+        throw new Error("Failed to save")
       }
     } catch (error) {
-      console.error("Error uploading image:", error)
-      alert("画像のアップロードに失敗しました。")
+      console.error("Error saving reviews:", error)
+      toast({
+        title: "エラー",
+        description: "保存に失敗しました。",
+        variant: "destructive",
+      })
     } finally {
-      setIsUploading(false)
+      setIsLoading(false)
     }
   }
+
+  const handleImageUpload = useCallback(
+    async (file: File, index: number) => {
+      setIsUploading(true)
+      try {
+        const formData = new FormData()
+        formData.append("file", file)
+        formData.append("isAdmin", "true")
+        formData.append("section", `review${index}`)
+
+        const response = await fetch("/api/upload", {
+          method: "POST",
+          body: formData,
+        })
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
+
+        const data = await response.json()
+        if (data.success) {
+          toast({
+            title: "画像アップロード成功",
+            description: "画像が正常にアップロードされました。",
+          })
+          await refreshImages()
+        } else {
+          throw new Error("Image upload failed")
+        }
+      } catch (error) {
+        console.error("Error uploading image:", error)
+        toast({
+          title: "エラー",
+          description: "画像のアップロードに失敗しました。",
+          variant: "destructive",
+        })
+      } finally {
+        setIsUploading(false)
+      }
+    },
+    [refreshImages, toast],
+  )
 
   return (
     <div className="space-y-4">
@@ -220,11 +271,15 @@ export default function ReviewsEditor() {
           </TabsContent>
         ))}
       </Tabs>
-      <Button onClick={handleAddReview} className="w-full">
-        <Plus className="h-4 w-4 mr-2" />
-        新しいお客様の声を追加
-      </Button>
-      <Button onClick={handleSave}>保存</Button>
+      <div className="flex gap-2">
+        <Button onClick={handleAddReview} variant="outline">
+          <Plus className="h-4 w-4 mr-2" />
+          新しいお客様の声を追加
+        </Button>
+        <Button onClick={handleSave} disabled={isLoading}>
+          {isLoading ? "保存中..." : "保存"}
+        </Button>
+      </div>
     </div>
   )
 }
