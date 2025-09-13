@@ -1,53 +1,47 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Clock, UserCheck, Leaf, Home } from "lucide-react"
+import { Card, CardContent } from "@/components/ui/card"
 import AnimatedSection from "./AnimatedSection"
 import { useImageUrls } from "@/app/hooks/useImageUrls"
 import ErrorMessage from "./ErrorMessage"
 
-interface Strength {
+interface StrengthItem {
+  icon: string
   title: string
   description: string
-  icon: any
-  color: string
-  iconColor: string
 }
 
-const strengths = [
+const initialStrengths: StrengthItem[] = [
   {
-    title: "翌日対応、365日対応",
-    description: "お急ぎの方も安心。年中無休でサービスを提供しています。",
-    icon: Clock,
-    color: "bg-blue-100 hover:bg-blue-200",
-    iconColor: "text-blue-600",
+    icon: "⚡",
+    title: "最短翌日対応",
+    description: "お急ぎのご依頼にも迅速に対応いたします",
   },
   {
+    icon: "🕐",
+    title: "365日対応",
+    description: "年中無休でお客様のご要望にお応えします",
+  },
+  {
+    icon: "👨‍🔧",
     title: "経験豊富なプロのスタッフ",
-    description: "熟練のスタッフが丁寧に作業いたします。",
-    icon: UserCheck,
-    color: "bg-green-100 hover:bg-green-200",
-    iconColor: "text-green-600",
+    description: "確かな技術と豊富な経験を持つスタッフが対応",
   },
   {
+    icon: "🌱",
     title: "エコフレンドリーな洗剤使用",
-    description: "環境と健康に配慮した安全な洗剤を使用しています。",
-    icon: Leaf,
-    color: "bg-yellow-100 hover:bg-yellow-200",
-    iconColor: "text-yellow-600",
+    description: "環境に優しい洗剤で安心・安全なクリーニング",
   },
   {
+    icon: "🏠",
     title: "地域密着で安心",
-    description: "千葉県の地域事情を熟知したスタッフが対応します。",
-    icon: Home,
-    color: "bg-purple-100 hover:bg-purple-200",
-    iconColor: "text-purple-600",
+    description: "千葉県を中心とした地域密着型のサービス",
   },
 ]
 
 export default function Strengths() {
-  const [localStrengths, setLocalStrengths] = useState<Strength[]>(strengths)
+  const [strengths, setStrengths] = useState<StrengthItem[]>(initialStrengths)
   const { imageUrls, isLoading, error } = useImageUrls()
 
   useEffect(() => {
@@ -56,21 +50,14 @@ export default function Strengths() {
         const response = await fetch("/api/site-content?section=strengths")
         const data = await response.json()
         if (data && Array.isArray(data)) {
-          // Map the data to include icons and colors from the initial strengths
-          const mappedStrengths = data.map((strength, index) => ({
-            ...strength,
-            icon: strengths[index]?.icon || strengths[0].icon,
-            color: strengths[index]?.color || strengths[0].color,
-            iconColor: strengths[index]?.iconColor || strengths[0].iconColor,
-          }))
-          setLocalStrengths(mappedStrengths)
+          setStrengths(data)
         }
       } catch (error) {
         console.error("Error fetching strengths:", error)
         // Fallback to localStorage
-        const savedStrengths = localStorage.getItem("strengthsContent")
-        if (savedStrengths) {
-          setLocalStrengths(JSON.parse(savedStrengths))
+        const saved = localStorage.getItem("strengthsContent")
+        if (saved) {
+          setStrengths(JSON.parse(saved))
         }
       }
     }
@@ -98,28 +85,17 @@ export default function Strengths() {
     >
       <div className="absolute inset-0 bg-black opacity-20"></div>
       <div className="container mx-auto px-4">
-        <h2 className="text-3xl font-bold text-center mb-12 text-gray-800 bg-white bg-opacity-75 p-4 rounded-lg shadow-lg">
+        <h2 className="text-3xl font-bold text-center mb-12 text-white bg-black bg-opacity-50 p-4 rounded-lg shadow-lg">
           私たちの強み
         </h2>
         <AnimatedSection>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {localStrengths.map((strength, index) => (
-              <Card
-                key={index}
-                className={`${strength.color} hover:shadow-lg transition-all duration-300 bg-opacity-90`}
-              >
-                <CardHeader>
-                  <div className="flex justify-center mb-4">
-                    <strength.icon className={`h-12 w-12 ${strength.iconColor}`} />
-                  </div>
-                  <CardTitle className="text-center" style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)" }}>
-                    {strength.title}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-center text-gray-600" style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)" }}>
-                    {strength.description}
-                  </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {strengths.map((strength, index) => (
+              <Card key={index} className="bg-white bg-opacity-90 hover:bg-opacity-100 transition-all duration-300">
+                <CardContent className="p-6 text-center">
+                  <div className="text-4xl mb-4">{strength.icon}</div>
+                  <h3 className="text-xl font-semibold mb-2 text-gray-800">{strength.title}</h3>
+                  <p className="text-gray-600">{strength.description}</p>
                 </CardContent>
               </Card>
             ))}

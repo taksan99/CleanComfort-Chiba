@@ -1,33 +1,36 @@
-import { NextResponse } from "next/server"
-import { sql } from "@vercel/postgres"
+import { type NextRequest, NextResponse } from "next/server"
+import { neon } from "@neondatabase/serverless"
 
-export async function GET(request: Request) {
+const sql = neon(process.env.DATABASE_URL!)
+
+export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const section = searchParams.get("section")
 
-    if (section) {
-      const result = await sql`
-        SELECT content FROM site_content 
-        WHERE section = ${section}
-        ORDER BY updated_at DESC
-        LIMIT 1
-      `
-      return NextResponse.json(result.rows[0]?.content || null)
-    } else {
-      const result = await sql`
-        SELECT section, content FROM site_content
-        ORDER BY section, updated_at DESC
-      `
-      return NextResponse.json(result.rows)
+    if (!section) {
+      return NextResponse.json({ error: "Section parameter is required" }, { status: 400 })
     }
+
+    const result = await sql`
+      SELECT content FROM site_content 
+      WHERE section = ${section} 
+      ORDER BY updated_at DESC 
+      LIMIT 1
+    `
+
+    if (result.length === 0) {
+      return NextResponse.json(null)
+    }
+
+    return NextResponse.json(result[0].content)
   } catch (error) {
-    console.error("Failed to fetch site content:", error)
-    return NextResponse.json({ error: "Failed to fetch site content" }, { status: 500 })
+    console.error("Error fetching site content:", error)
+    return NextResponse.json({ error: "Failed to fetch content" }, { status: 500 })
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const { section, content } = await request.json()
 
@@ -40,7 +43,7 @@ export async function POST(request: Request) {
       SELECT id FROM site_content WHERE section = ${section}
     `
 
-    if (existing.rows.length > 0) {
+    if (existing.length > 0) {
       // Update existing record
       await sql`
         UPDATE site_content 
@@ -57,7 +60,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error("Failed to save site content:", error)
-    return NextResponse.json({ error: "Failed to save site content" }, { status: 500 })
+    console.error("Error saving site content:", error)
+    return NextResponse.json({ error: "Failed to save content" }, { status: 500 })
   }
 }
