@@ -1,23 +1,17 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import AnimatedSection from "./AnimatedSection"
-import { useImageUrls } from "../hooks/useImageUrls"
+import { motion } from "framer-motion"
+import { useImageUrls } from "@/app/hooks/useImageUrls"
+import ImageWithFallback from "./ImageWithFallback"
+import ErrorMessage from "./ErrorMessage"
 import * as LucideIcons from "lucide-react"
-import { HelpCircle } from "lucide-react"
 
-interface ServiceContent {
-  title: string
-  description: string
-  items: { name: string; icon: string; desc: string }[]
-  features: string[]
-  option: string
-}
-
+// アイコン名とLucideアイコンのマッピング
 const iconMap: { [key: string]: keyof typeof LucideIcons } = {
-  "water-5": "Droplets",
+  "water-5": "Droplet",
   kitchen: "Utensils",
   bathroom: "Bath",
   toilet: "Toilet",
@@ -39,12 +33,35 @@ const iconMap: { [key: string]: keyof typeof LucideIcons } = {
   "other-service": "MoreHorizontal",
 }
 
-const defaultServices: ServiceContent[] = [
+// サービスごとのアイコン色
+const iconColors: { [key: string]: string } = {
+  ハウスクリーニング: "#3b82f6", // blue-500
+  エアコンクリーニング: "#10b981", // emerald-500
+  便利屋サービス: "#f59e0b", // amber-500
+}
+
+interface ServiceItem {
+  name: string
+  icon: string
+  desc: string
+}
+
+interface ServiceContent {
+  title: string
+  description: string
+  items: ServiceItem[]
+  features: string[]
+  option: string
+  bg: string
+}
+
+const initialServices: ServiceContent[] = [
   {
     title: "ハウスクリーニング",
+    image: "/placeholder.svg?height=200&width=300",
     description: "あなたの家を隅々まで美しく",
     items: [
-      { name: "水回り5点セット", icon: "water-5", desc: "68,000円～ 洗面所・キッチン・浴室・トイレ・洗濯機周り" },
+      { name: "水回り5点セット", icon: "water-5", desc: "68,000円～ 浴室/キッチン/レンジフード/トイレ/洗面台" },
       { name: "キッチン", icon: "kitchen", desc: "20,000円～ レンジフード・コンロ・シンク" },
       { name: "浴室", icon: "bathroom", desc: "20,000円～ 床・壁・天井・鏡・蛇口（エプロン内部クリーニング+5,000円）" },
       { name: "トイレ", icon: "toilet", desc: "10,000円～ 便器・床・壁・換気扇" },
@@ -58,9 +75,11 @@ const defaultServices: ServiceContent[] = [
       "プロの道具と技術で普段手の届かない場所も",
     ],
     option: "なし",
+    bg: "bg-blue-50",
   },
   {
     title: "エアコンクリーニング",
+    image: "/placeholder.svg?height=200&width=300",
     description: "クリーンな空気で快適生活",
     items: [
       { name: "通常エアコン", icon: "air-conditioner", desc: "12,000円～ 壁掛け型" },
@@ -77,10 +96,12 @@ const defaultServices: ServiceContent[] = [
       "悪臭の原因となるカビやバクテリアを撃退",
     ],
     option: "抗菌コート：1,000円、防カビコート：1,000円",
+    bg: "bg-green-50",
   },
   {
     title: "便利屋サービス",
-    description: "日常のお困りごとを解決（最低料金5,000円～）",
+    image: "/placeholder.svg?height=200&width=300",
+    description: "日常のお困りごとを解決",
     items: [
       { name: "害獣・害虫駆除", icon: "pest-control", desc: "10,000円～ ネズミ、コウモリ、蜂の巣など" },
       { name: "墓参り代行", icon: "grave-visit", desc: "お墓の清掃・お供えなど" },
@@ -101,118 +122,141 @@ const defaultServices: ServiceContent[] = [
       "緊急対応も可能（追加料金あり）",
     ],
     option: "電球交換など軽微なもの：500円～（お気軽にご相談ください）",
+    bg: "bg-yellow-50",
   },
 ]
 
 export default function Services() {
-  const [services, setServices] = useState<ServiceContent[]>(defaultServices)
+  const [services, setServices] = useState(initialServices)
+  const imageSections = ["servicesBackgroundImage", "houseCleaningCard", "airConCleaningCard", "handymanCard"]
   const { imageUrls, isLoading, error } = useImageUrls()
 
   useEffect(() => {
-    fetchContent()
-  }, [])
-
-  const fetchContent = async () => {
-    try {
-      const response = await fetch("/api/content?section=services")
-      const data = await response.json()
-      if (data.content) {
-        setServices(data.content)
-      }
-    } catch (error) {
-      console.error("Error fetching services content:", error)
+    const savedServiceContent = localStorage.getItem("serviceContent")
+    if (savedServiceContent) {
+      const parsedContent = JSON.parse(savedServiceContent)
+      setServices(parsedContent)
     }
-  }
+  }, [])
 
   if (isLoading) {
     return <div>Loading...</div>
   }
 
   if (error) {
-    console.error("Error loading services images:", error)
+    return <ErrorMessage message={error.message} />
   }
 
-  const serviceImages = [
-    imageUrls.houseCleaningCard?.url || "/placeholder.svg",
-    imageUrls.airConCleaningCard?.url || "/placeholder.svg",
-    imageUrls.handymanCard?.url || "/placeholder.svg",
-  ]
-
-  const backgroundImage = imageUrls.servicesBackgroundImage?.url
+  const backgroundImage = imageUrls.servicesBackgroundImage?.url || "/placeholder.svg"
 
   return (
     <section
       id="services"
       className="relative bg-cover bg-center bg-no-repeat py-16"
-      style={{
-        backgroundImage: `url(${backgroundImage || "/placeholder.svg"})`,
-        backgroundAttachment: "fixed",
-      }}
+      style={{ backgroundImage: `url(${backgroundImage})`, backgroundAttachment: "fixed" }}
     >
-      <div className="absolute inset-0 bg-black opacity-50"></div>
-      <div className="container mx-auto px-4 relative z-10">
+      <div className="absolute inset-0 bg-white opacity-20"></div>
+      <div className="container mx-auto px-4">
+        <h2 className="text-3xl font-bold text-center mb-12 text-gray-800 bg-white bg-opacity-75 p-4 rounded-lg shadow-lg">
+          サービス内容
+        </h2>
         <AnimatedSection>
-          <h2 className="text-4xl font-bold text-center mb-12 text-white">サービス内容</h2>
-        </AnimatedSection>
-        <div className="grid md:grid-cols-3 gap-8">
-          {services.map((service, index) => {
-            const IconComponent = LucideIcons[iconMap[service.items[0]?.icon] as keyof typeof LucideIcons] || HelpCircle
-            return (
-              <AnimatedSection key={index}>
-                <Card className="h-full bg-white bg-opacity-95 hover:bg-opacity-100 transition-all duration-300 transform hover:scale-105">
-                  <CardHeader className="text-center">
-                    <div className="mx-auto mb-4 relative">
-                      <img
-                        src={serviceImages[index] || "/placeholder.svg"}
-                        alt={service.title}
-                        className="w-full h-48 object-cover rounded-lg shadow-xl"
-                      />
-                    </div>
-                    <CardTitle className="text-2xl text-blue-600">{service.title}</CardTitle>
-                    <p className="text-gray-600">{service.description}</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {services.map((service, index) => (
+              <motion.div
+                key={service.title}
+                initial={{ opacity: 0, y: 50 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.2 }}
+              >
+                <Card className={`${initialServices[index].bg} overflow-hidden bg-opacity-90 h-full`}>
+                  <ImageWithFallback
+                    src={
+                      index === 0
+                        ? imageUrls.houseCleaningCard?.url
+                        : index === 1
+                          ? imageUrls.airConCleaningCard?.url
+                          : index === 2
+                            ? imageUrls.handymanCard?.url
+                            : "/placeholder.svg"
+                    }
+                    fallbackSrc="/placeholder.svg"
+                    alt={service.title}
+                    width={400}
+                    height={300}
+                    className="w-full h-48 object-cover"
+                  />
+                  <CardHeader>
+                    <CardTitle className="text-2xl" style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)" }}>
+                      {service.title}
+                    </CardTitle>
+                    <CardDescription
+                      className="text-lg"
+                      style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)", whiteSpace: "pre-wrap" }}
+                    >
+                      {service.description}
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-4">
-                      <div>
-                        <h4 className="font-semibold mb-2 text-gray-800">提供サービス</h4>
-                        <div className="space-y-2">
-                          {service.items.map((item, itemIndex) => {
-                            const ItemIcon = LucideIcons[iconMap[item.icon] as keyof typeof LucideIcons] || HelpCircle
-                            return (
-                              <div key={itemIndex} className="flex items-start space-x-2">
-                                <ItemIcon className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                                <div>
-                                  <span className="font-medium text-gray-800">{item.name}</span>
-                                  <p className="text-sm text-gray-600">{item.desc}</p>
-                                </div>
-                              </div>
-                            )
-                          })}
-                        </div>
-                      </div>
-                      <div>
-                        <h4 className="font-semibold mb-2 text-gray-800">サービスの特徴</h4>
-                        <div className="flex flex-wrap gap-1">
-                          {service.features.map((feature, featureIndex) => (
-                            <Badge key={featureIndex} variant="secondary" className="text-xs">
-                              {feature}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                      {service.option && service.option !== "なし" && (
-                        <div>
-                          <h4 className="font-semibold mb-2 text-gray-800">オプション</h4>
-                          <p className="text-sm text-gray-600">{service.option}</p>
-                        </div>
-                      )}
-                    </div>
+                    <h4 className="font-semibold mb-2 text-lg" style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)" }}>
+                      提供サービス
+                    </h4>
+                    <ul className="space-y-2 mb-4">
+                      {service.items.map((item, itemIndex) => {
+                        const IconComponent =
+                          LucideIcons[iconMap[item.icon] as keyof typeof LucideIcons] || LucideIcons.HelpCircle
+                        return (
+                          <li key={itemIndex} className="flex items-start">
+                            <span className="text-2xl mr-2">
+                              <IconComponent size={24} color={iconColors[service.title]} strokeWidth={2} />
+                            </span>
+                            <div>
+                              <h5
+                                className="font-semibold text-base"
+                                style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)" }}
+                              >
+                                {item.name}
+                              </h5>
+                              <p
+                                className="text-sm text-gray-600"
+                                style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)", whiteSpace: "pre-wrap" }}
+                              >
+                                {item.desc}
+                              </p>
+                            </div>
+                          </li>
+                        )
+                      })}
+                    </ul>
+                    <h4 className="font-semibold mb-2 text-lg" style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)" }}>
+                      サービスの特徴
+                    </h4>
+                    <ul className="list-disc list-inside space-y-1 mb-4">
+                      {service.features.map((feature, index) => (
+                        <li
+                          key={index}
+                          className="text-sm"
+                          style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)", whiteSpace: "pre-wrap" }}
+                        >
+                          {feature}
+                        </li>
+                      ))}
+                    </ul>
+                    <h4 className="font-semibold mb-2 text-lg" style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)" }}>
+                      オプションサービス
+                    </h4>
+                    <p
+                      className="text-sm text-gray-600"
+                      style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)", whiteSpace: "pre-wrap" }}
+                    >
+                      {service.option}
+                    </p>
                   </CardContent>
                 </Card>
-              </AnimatedSection>
-            )
-          })}
-        </div>
+              </motion.div>
+            ))}
+          </div>
+        </AnimatedSection>
       </div>
     </section>
   )
