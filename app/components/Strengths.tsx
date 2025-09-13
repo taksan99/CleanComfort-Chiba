@@ -2,105 +2,75 @@
 
 import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
-import AnimatedSection from "./AnimatedSection"
-import { useImageUrls } from "@/app/hooks/useImageUrls"
-import ErrorMessage from "./ErrorMessage"
+import { Clock, Users, Leaf, MapPin } from "lucide-react"
 
-interface StrengthItem {
-  icon: string
+interface Strength {
   title: string
   description: string
 }
 
-const initialStrengths: StrengthItem[] = [
+const initialStrengths: Strength[] = [
   {
-    icon: "⚡",
-    title: "最短翌日対応",
-    description: "お急ぎのご依頼にも迅速に対応いたします",
+    title: "翌日対応、365日対応",
+    description: "お急ぎの方も安心。年中無休でサービスを提供しています。",
   },
   {
-    icon: "🕐",
-    title: "365日対応",
-    description: "年中無休でお客様のご要望にお応えします",
-  },
-  {
-    icon: "👨‍🔧",
     title: "経験豊富なプロのスタッフ",
-    description: "確かな技術と豊富な経験を持つスタッフが対応",
+    description: "熟練のスタッフが丁寧に作業いたします。",
   },
   {
-    icon: "🌱",
     title: "エコフレンドリーな洗剤使用",
-    description: "環境に優しい洗剤で安心・安全なクリーニング",
+    description: "環境と健康に配慮した安全な洗剤を使用しています。",
   },
   {
-    icon: "🏠",
     title: "地域密着で安心",
-    description: "千葉県を中心とした地域密着型のサービス",
+    description: "千葉県の地域事情を熟知したスタッフが対応します。",
   },
 ]
 
 export default function Strengths() {
-  const [strengths, setStrengths] = useState<StrengthItem[]>(initialStrengths)
-  const { imageUrls, isLoading, error } = useImageUrls()
+  const [strengths, setStrengths] = useState<Strength[]>(initialStrengths)
 
   useEffect(() => {
-    const fetchData = async () => {
+    const savedStrengths = localStorage.getItem("strengthsContent")
+    if (savedStrengths) {
       try {
-        const response = await fetch("/api/site-content?section=strengths")
-        const data = await response.json()
-        if (data && Array.isArray(data)) {
-          setStrengths(data)
-        }
+        const parsedStrengths = JSON.parse(savedStrengths)
+        setStrengths(parsedStrengths)
       } catch (error) {
-        console.error("Error fetching strengths:", error)
-        // Fallback to localStorage
-        const saved = localStorage.getItem("strengthsContent")
-        if (saved) {
-          setStrengths(JSON.parse(saved))
-        }
+        console.error("Error parsing saved strengths:", error)
       }
     }
-
-    fetchData()
   }, [])
 
-  if (isLoading) {
-    return <div>Loading...</div>
-  }
-
-  if (error) {
-    return <ErrorMessage message={error.message} />
-  }
-
-  const backgroundImage = imageUrls.strengthsBackgroundImage?.url || "/placeholder.svg"
+  const icons = [Clock, Users, Leaf, MapPin]
 
   return (
-    <section
-      className="relative bg-cover bg-center bg-no-repeat py-16"
-      style={{
-        backgroundImage: `url(${backgroundImage})`,
-        backgroundAttachment: "fixed",
-      }}
-    >
-      <div className="absolute inset-0 bg-black opacity-20"></div>
+    <section id="strengths" className="py-20 bg-gradient-to-br from-green-50 to-emerald-100">
       <div className="container mx-auto px-4">
-        <h2 className="text-3xl font-bold text-center mb-12 text-white bg-black bg-opacity-50 p-4 rounded-lg shadow-lg">
-          私たちの強み
-        </h2>
-        <AnimatedSection>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {strengths.map((strength, index) => (
-              <Card key={index} className="bg-white bg-opacity-90 hover:bg-opacity-100 transition-all duration-300">
+        <div className="text-center mb-16">
+          <h2 className="text-4xl font-bold text-gray-800 mb-4">私たちの強み</h2>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            クリーンコンフォート千葉が選ばれる理由をご紹介します。
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+          {strengths.map((strength, index) => {
+            const IconComponent = icons[index]
+            return (
+              <Card key={index} className="hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
                 <CardContent className="p-6 text-center">
-                  <div className="text-4xl mb-4">{strength.icon}</div>
-                  <h3 className="text-xl font-semibold mb-2 text-gray-800">{strength.title}</h3>
-                  <p className="text-gray-600">{strength.description}</p>
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
+                    <IconComponent className="w-8 h-8 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-800 mb-3">{strength.title}</h3>
+                  <p className="text-gray-600 text-sm leading-relaxed">{strength.description}</p>
                 </CardContent>
               </Card>
-            ))}
-          </div>
-        </AnimatedSection>
+            )
+          })}
+        </div>
       </div>
     </section>
   )

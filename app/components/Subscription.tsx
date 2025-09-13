@@ -1,171 +1,151 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Check } from "lucide-react"
-import AnimatedSection from "./AnimatedSection"
-import { useImageUrls } from "@/app/hooks/useImageUrls"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Check, Calendar, Clock, Star } from "lucide-react"
 
 interface SubscriptionPlan {
   name: string
   price: string
+  period: string
   description: string
   features: string[]
-  limits: string
-  color: string
-  buttonColor: string
-  ribbonColor: string
+  isPopular?: boolean
 }
 
 const initialPlans: SubscriptionPlan[] = [
   {
-    name: "ベーシック",
-    price: "9,800",
-    description: "月1回の基本清掃",
+    name: "ベーシックプラン",
+    price: "月額 15,000円",
+    period: "月1回",
+    description: "基本的な清掃サービスを定期的に",
     features: [
-      "リビング・キッチン清掃",
-      "浴室・トイレ清掃",
+      "月1回の定期清掃",
+      "水回り清掃（キッチン・浴室・トイレ）",
       "掃除機がけ・拭き掃除",
-      "洗濯1回分（乾燥・たたみ含む）",
-      "ゴミ出し",
+      "ゴミ出し代行",
+      "簡単な整理整頓",
     ],
-    limits: "40㎡までの物件対象。それ以上の物件は追加料金で対応可能。",
-    color: "bg-blue-100",
-    buttonColor: "bg-blue-500 hover:bg-blue-600",
-    ribbonColor: "from-yellow-600 to-yellow-800",
   },
   {
-    name: "スタンダード",
-    price: "19,800",
-    description: "月2回の総合清掃",
+    name: "スタンダードプラン",
+    price: "月額 25,000円",
+    period: "月2回",
+    description: "より充実したサービスで快適な住環境を",
     features: [
-      "ベーシックプランの全内容",
-      "エアコンフィルター清掃",
-      "冷蔵庫・電子レンジ清掃",
-      "窓ガラス・網戸清掃",
-      "洗濯2回分（乾燥・たたみ含む）",
-      "布団干し",
+      "月2回の定期清掃",
+      "水回り清掃（キッチン・浴室・トイレ・洗面台）",
+      "掃除機がけ・拭き掃除・窓拭き",
+      "ゴミ出し代行",
+      "整理整頓・ベッドメイキング",
+      "エアコンフィルター清掃（月1回）",
     ],
-    limits: "60㎡までの物件対象。それ以上の物件は追加料金で対応可能。",
-    color: "bg-green-100",
-    buttonColor: "bg-green-500 hover:bg-green-600",
-    ribbonColor: "from-gray-400 to-gray-600",
+    isPopular: true,
   },
   {
-    name: "プレミアム",
-    price: "59,800",
-    description: "月3回の徹底清掃＋家事代行",
+    name: "プレミアムプラン",
+    price: "月額 40,000円",
+    period: "週1回",
+    description: "最高レベルの清掃とサポートサービス",
     features: [
-      "スタンダードプランの全内容",
-      "クローゼット整理",
-      "ベッドメイキング",
-      "アイロンがけ",
-      "買い物代行",
-      "植物の水やり・ペットのお世話",
-      "靴磨き",
+      "週1回の定期清掃",
+      "全室清掃（水回り・リビング・寝室）",
+      "掃除機がけ・拭き掃除・窓拭き",
+      "ゴミ出し代行・洗濯物の取り込み",
+      "整理整頓・ベッドメイキング",
+      "エアコンフィルター清掃（月2回）",
+      "簡単な買い物代行",
+      "植物の水やり",
     ],
-    limits: "80㎡までの物件対象。それ以上の物件は追加料金で対応可能。",
-    color: "bg-yellow-100",
-    buttonColor: "bg-yellow-500 hover:bg-yellow-600",
-    ribbonColor: "from-yellow-400 to-yellow-600",
   },
 ]
 
-const PlanRibbon = ({ color }: { color: string }) => (
-  <>
-    <div className={`absolute top-0 right-0 w-16 h-16 overflow-hidden`}>
-      <div
-        className={`absolute top-0 right-0 transform translate-x-1/2 -translate-y-1/2 rotate-45 w-32 h-8 bg-gradient-to-r ${color}`}
-      ></div>
-    </div>
-    <div className={`absolute bottom-0 left-0 w-16 h-16 overflow-hidden`}>
-      <div
-        className={`absolute bottom-0 left-0 transform -translate-x-1/2 translate-y-1/2 rotate-45 w-32 h-8 bg-gradient-to-r ${color}`}
-      ></div>
-    </div>
-  </>
-)
-
 export default function Subscription() {
   const [plans, setPlans] = useState<SubscriptionPlan[]>(initialPlans)
-  const { imageUrls, isLoading, error } = useImageUrls()
 
   useEffect(() => {
-    const savedPlans = localStorage.getItem("subscriptionPlans")
+    const savedPlans = localStorage.getItem("subscriptionContent")
     if (savedPlans) {
-      setPlans(JSON.parse(savedPlans))
+      try {
+        const parsedPlans = JSON.parse(savedPlans)
+        setPlans(parsedPlans)
+      } catch (error) {
+        console.error("Error parsing saved subscription plans:", error)
+      }
     }
   }, [])
 
-  if (isLoading) {
-    return <div className="text-center py-16">Loading...</div>
-  }
-
-  if (error) {
-    console.error("Error loading image:", error)
-    // エラーが発生した場合でもコンポーネントを表示
-  }
-
-  const backgroundImage = imageUrls.subscriptionBackgroundImage?.url || "/placeholder.svg"
-
   return (
-    <section className="py-16 bg-cover bg-center relative" style={{ backgroundImage: `url(${backgroundImage})` }}>
+    <section id="subscription" className="py-20 bg-gradient-to-br from-indigo-50 to-purple-100">
       <div className="container mx-auto px-4">
-        <h2 className="text-3xl font-bold text-center mb-6 text-gray-800 bg-white bg-opacity-75 p-4 rounded-lg shadow-lg">
-          サブスクリプションサービス
-        </h2>
-        <div className="text-center mb-12">
-          <p className="text-gray-600 bg-white bg-opacity-75 p-2 rounded-lg inline-block mx-auto">
-            定期的なお掃除と家事代行で、いつでも快適な暮らしを
+        <div className="text-center mb-16">
+          <h2 className="text-4xl font-bold text-gray-800 mb-4">サブスクリプションサービス</h2>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            定期的な清掃サービスで、いつでも清潔で快適な住環境を維持できます。
           </p>
         </div>
-        <AnimatedSection>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-            {plans.map((plan) => (
-              <div key={plan.name} className="transform hover:scale-105 transition-transform duration-300">
-                <Card
-                  className={`${plan.color} overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 relative p-4 bg-opacity-90`}
+
+        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          {plans.map((plan, index) => (
+            <Card
+              key={index}
+              className={`hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 ${
+                plan.isPopular ? "ring-2 ring-indigo-500 relative" : ""
+              }`}
+            >
+              {plan.isPopular && (
+                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                  <Badge className="bg-indigo-500 text-white px-4 py-1">
+                    <Star className="w-4 h-4 mr-1" />
+                    人気No.1
+                  </Badge>
+                </div>
+              )}
+
+              <CardHeader className="text-center pb-4">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+                  <Calendar className="w-8 h-8 text-white" />
+                </div>
+                <CardTitle className="text-2xl font-bold text-gray-800">{plan.name}</CardTitle>
+                <div className="text-3xl font-bold text-indigo-600 mt-2">{plan.price}</div>
+                <div className="flex items-center justify-center text-gray-600 mt-1">
+                  <Clock className="w-4 h-4 mr-1" />
+                  {plan.period}
+                </div>
+                <p className="text-gray-600 mt-2">{plan.description}</p>
+              </CardHeader>
+
+              <CardContent>
+                <ul className="space-y-3 mb-6">
+                  {plan.features.map((feature, featureIndex) => (
+                    <li key={featureIndex} className="flex items-start">
+                      <Check className="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-700 text-sm">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <Button
+                  className={`w-full ${
+                    plan.isPopular ? "bg-indigo-600 hover:bg-indigo-700" : "bg-gray-600 hover:bg-gray-700"
+                  }`}
                 >
-                  <PlanRibbon color={plan.ribbonColor} />
-                  <CardHeader>
-                    <CardTitle style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)" }}>{plan.name}</CardTitle>
-                    <CardDescription style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)" }}>
-                      {plan.description}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="flex-grow">
-                    <p
-                      className="text-4xl font-bold mb-4 text-gray-800"
-                      style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)" }}
-                    >
-                      ¥{plan.price}
-                      <span className="text-base font-normal">/月</span>
-                    </p>
-                    <ul className="space-y-2">
-                      {plan.features.map((feature, index) => (
-                        <li key={index} className="flex items-center">
-                          <Check className="h-5 w-5 text-green-500 mr-2" />
-                          <span style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)" }}>{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-                    <div className="mt-4 text-sm text-gray-600">
-                      <p style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)" }}>
-                        <strong>適用条件:</strong> {plan.limits}
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            ))}
-          </div>
-        </AnimatedSection>
-        <div className="text-center mt-8">
-          <p className="text-sm text-gray-800 bg-white bg-opacity-75 p-2 rounded-lg inline-block mx-auto">
-            ※ サービス内容や頻度は、お客様のご要望に応じてカスタマイズ可能です。詳細はお問い合わせください。
-            エアコンクリーニング、ハウスクリーニング、便利屋サービスのいずれかを1回以上ご利用後、
-            またはサブスクリプション開始前の現地調査後にご利用いただけます。
+                  プランを選択
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        <div className="text-center mt-12">
+          <p className="text-gray-600 mb-4">
+            ※ 初回ご利用時は現地調査が必要です。サービス内容は住環境に応じてカスタマイズ可能です。
           </p>
+          <Button size="lg" variant="outline" className="px-8 bg-transparent">
+            詳細なプラン比較を見る
+          </Button>
         </div>
       </div>
     </section>

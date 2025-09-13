@@ -1,44 +1,10 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import AnimatedSection from "./AnimatedSection"
-import { motion } from "framer-motion"
-import { useImageUrls } from "@/app/hooks/useImageUrls"
-import ImageWithFallback from "./ImageWithFallback"
-import ErrorMessage from "./ErrorMessage"
-import * as LucideIcons from "lucide-react"
-
-// アイコン名とLucideアイコンのマッピング
-const iconMap: { [key: string]: keyof typeof LucideIcons } = {
-  "water-5": "Droplet",
-  kitchen: "Utensils",
-  bathroom: "Bath",
-  toilet: "Toilet",
-  "glass-window": "Maximize",
-  balcony: "Home",
-  waxing: "Sparkles",
-  "air-conditioner": "Wind",
-  "air-conditioner-auto": "Cog",
-  "air-conditioner-embedded": "SquareAsterisk",
-  "air-conditioner-industrial": "Factory",
-  "air-conditioner-wide": "ArrowLeftRight",
-  "air-conditioner-outdoor": "CloudSun",
-  "pest-control": "Bug",
-  "grave-visit": "Flower2",
-  "pet-care": "Paw",
-  "friend-service": "Users",
-  gardening: "Scissors",
-  "plumbing-service": "Wrench",
-  "other-service": "MoreHorizontal",
-}
-
-// サービスごとのアイコン色
-const iconColors: { [key: string]: string } = {
-  ハウスクリーニング: "#3b82f6", // blue-500
-  エアコンクリーニング: "#10b981", // emerald-500
-  便利屋サービス: "#f59e0b", // amber-500
-}
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Droplets, Wind, Wrench } from "lucide-react"
+import { useImageUrls } from "../hooks/useImageUrls"
 
 interface ServiceItem {
   name: string
@@ -52,16 +18,14 @@ interface ServiceContent {
   items: ServiceItem[]
   features: string[]
   option: string
-  bg: string
 }
 
 const initialServices: ServiceContent[] = [
   {
     title: "ハウスクリーニング",
-    image: "/placeholder.svg?height=200&width=300",
     description: "あなたの家を隅々まで美しく",
     items: [
-      { name: "水回り5点セット", icon: "water-5", desc: "68,000円～ 浴室/キッチン/レンジフード/トイレ/洗面台" },
+      { name: "水回り5点セット", icon: "water-5", desc: "68,000円～ 洗面所・キッチン・浴室・トイレ・洗濯機周り" },
       { name: "キッチン", icon: "kitchen", desc: "20,000円～ レンジフード・コンロ・シンク" },
       { name: "浴室", icon: "bathroom", desc: "20,000円～ 床・壁・天井・鏡・蛇口（エプロン内部クリーニング+5,000円）" },
       { name: "トイレ", icon: "toilet", desc: "10,000円～ 便器・床・壁・換気扇" },
@@ -75,11 +39,9 @@ const initialServices: ServiceContent[] = [
       "プロの道具と技術で普段手の届かない場所も",
     ],
     option: "なし",
-    bg: "bg-blue-50",
   },
   {
     title: "エアコンクリーニング",
-    image: "/placeholder.svg?height=200&width=300",
     description: "クリーンな空気で快適生活",
     items: [
       { name: "通常エアコン", icon: "air-conditioner", desc: "12,000円～ 壁掛け型" },
@@ -96,12 +58,10 @@ const initialServices: ServiceContent[] = [
       "悪臭の原因となるカビやバクテリアを撃退",
     ],
     option: "抗菌コート：1,000円、防カビコート：1,000円",
-    bg: "bg-green-50",
   },
   {
     title: "便利屋サービス",
-    image: "/placeholder.svg?height=200&width=300",
-    description: "日常のお困りごとを解決",
+    description: "日常のお困りごとを解決（最低料金5,000円～）",
     items: [
       { name: "害獣・害虫駆除", icon: "pest-control", desc: "10,000円～ ネズミ、コウモリ、蜂の巣など" },
       { name: "墓参り代行", icon: "grave-visit", desc: "お墓の清掃・お供えなど" },
@@ -122,141 +82,109 @@ const initialServices: ServiceContent[] = [
       "緊急対応も可能（追加料金あり）",
     ],
     option: "電球交換など軽微なもの：500円～（お気軽にご相談ください）",
-    bg: "bg-yellow-50",
   },
 ]
 
 export default function Services() {
-  const [services, setServices] = useState(initialServices)
-  const imageSections = ["servicesBackgroundImage", "houseCleaningCard", "airConCleaningCard", "handymanCard"]
-  const { imageUrls, isLoading, error } = useImageUrls()
+  const { imageUrls } = useImageUrls()
+  const [services, setServices] = useState<ServiceContent[]>(initialServices)
 
   useEffect(() => {
-    const savedServiceContent = localStorage.getItem("serviceContent")
-    if (savedServiceContent) {
-      const parsedContent = JSON.parse(savedServiceContent)
-      setServices(parsedContent)
+    const savedServices = localStorage.getItem("serviceContent")
+    if (savedServices) {
+      try {
+        const parsedServices = JSON.parse(savedServices)
+        setServices(parsedServices)
+      } catch (error) {
+        console.error("Error parsing saved services:", error)
+      }
     }
   }, [])
 
-  if (isLoading) {
-    return <div>Loading...</div>
+  const getIconComponent = (iconName: string) => {
+    switch (iconName) {
+      case "water-5":
+      case "kitchen":
+      case "bathroom":
+      case "toilet":
+      case "glass-window":
+      case "balcony":
+      case "waxing":
+        return <Droplets className="w-8 h-8 text-blue-600" />
+      case "air-conditioner":
+      case "air-conditioner-auto":
+      case "air-conditioner-embedded":
+      case "air-conditioner-industrial":
+      case "air-conditioner-wide":
+      case "air-conditioner-outdoor":
+        return <Wind className="w-8 h-8 text-green-600" />
+      default:
+        return <Wrench className="w-8 h-8 text-yellow-600" />
+    }
   }
-
-  if (error) {
-    return <ErrorMessage message={error.message} />
-  }
-
-  const backgroundImage = imageUrls.servicesBackgroundImage?.url || "/placeholder.svg"
 
   return (
-    <section
-      id="services"
-      className="relative bg-cover bg-center bg-no-repeat py-16"
-      style={{ backgroundImage: `url(${backgroundImage})`, backgroundAttachment: "fixed" }}
-    >
-      <div className="absolute inset-0 bg-white opacity-20"></div>
+    <section id="services" className="py-20 bg-gradient-to-br from-gray-50 to-blue-50">
       <div className="container mx-auto px-4">
-        <h2 className="text-3xl font-bold text-center mb-12 text-gray-800 bg-white bg-opacity-75 p-4 rounded-lg shadow-lg">
-          サービス内容
-        </h2>
-        <AnimatedSection>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {services.map((service, index) => (
-              <motion.div
-                key={service.title}
-                initial={{ opacity: 0, y: 50 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.2 }}
-              >
-                <Card className={`${initialServices[index].bg} overflow-hidden bg-opacity-90 h-full`}>
-                  <ImageWithFallback
-                    src={
-                      index === 0
-                        ? imageUrls.houseCleaningCard?.url
-                        : index === 1
-                          ? imageUrls.airConCleaningCard?.url
-                          : index === 2
-                            ? imageUrls.handymanCard?.url
-                            : "/placeholder.svg"
-                    }
-                    fallbackSrc="/placeholder.svg"
-                    alt={service.title}
-                    width={400}
-                    height={300}
-                    className="w-full h-48 object-cover"
-                  />
-                  <CardHeader>
-                    <CardTitle className="text-2xl" style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)" }}>
-                      {service.title}
-                    </CardTitle>
-                    <CardDescription
-                      className="text-lg"
-                      style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)", whiteSpace: "pre-wrap" }}
-                    >
-                      {service.description}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <h4 className="font-semibold mb-2 text-lg" style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)" }}>
-                      提供サービス
-                    </h4>
-                    <ul className="space-y-2 mb-4">
-                      {service.items.map((item, itemIndex) => {
-                        const IconComponent =
-                          LucideIcons[iconMap[item.icon] as keyof typeof LucideIcons] || LucideIcons.HelpCircle
-                        return (
-                          <li key={itemIndex} className="flex items-start">
-                            <span className="text-2xl mr-2">
-                              <IconComponent size={24} color={iconColors[service.title]} strokeWidth={2} />
-                            </span>
-                            <div>
-                              <h5
-                                className="font-semibold text-base"
-                                style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)" }}
-                              >
-                                {item.name}
-                              </h5>
-                              <p
-                                className="text-sm text-gray-600"
-                                style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)", whiteSpace: "pre-wrap" }}
-                              >
-                                {item.desc}
-                              </p>
-                            </div>
-                          </li>
-                        )
-                      })}
-                    </ul>
-                    <h4 className="font-semibold mb-2 text-lg" style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)" }}>
-                      サービスの特徴
-                    </h4>
-                    <ul className="list-disc list-inside space-y-1 mb-4">
-                      {service.features.map((feature, index) => (
-                        <li
-                          key={index}
-                          className="text-sm"
-                          style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)", whiteSpace: "pre-wrap" }}
-                        >
+        <div className="text-center mb-16">
+          <h2 className="text-4xl font-bold text-gray-800 mb-4">サービス内容</h2>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            プロの技術と経験で、あなたの暮らしをより快適に。幅広いサービスでお客様のニーズにお応えします。
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-8">
+          {services.map((service, index) => (
+            <Card key={index} className="hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
+              <CardHeader className="text-center pb-4">
+                <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
+                  {getIconComponent(service.items[0].icon)}
+                </div>
+                <CardTitle className="text-2xl font-bold text-gray-800">{service.title}</CardTitle>
+                <p className="text-gray-600 mt-2">{service.description}</p>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="font-semibold text-gray-800 mb-3">提供サービス</h4>
+                    <div className="space-y-2">
+                      {service.items.map((item, itemIndex) => (
+                        <div key={itemIndex} className="flex items-start space-x-3 p-2 rounded-lg hover:bg-gray-50">
+                          {getIconComponent(item.icon)}
+                          <div>
+                            <div className="font-medium text-gray-800">{item.name}</div>
+                            <div className="text-sm text-gray-600">{item.desc}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="font-semibold text-gray-800 mb-3">サービスの特徴</h4>
+                    <ul className="space-y-1">
+                      {service.features.map((feature, featureIndex) => (
+                        <li key={featureIndex} className="text-sm text-gray-600 flex items-center">
+                          <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
                           {feature}
                         </li>
                       ))}
                     </ul>
-                    <h4 className="font-semibold mb-2 text-lg" style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)" }}>
-                      オプションサービス
-                    </h4>
-                    <p
-                      className="text-sm text-gray-600"
-                      style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)", whiteSpace: "pre-wrap" }}
-                    >
-                      {service.option}
-                    </p>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
-        </AnimatedSection>
+                  </div>
+
+                  {service.option && service.option !== "なし" && (
+                    <div>
+                      <h4 className="font-semibold text-gray-800 mb-2">オプションサービス</h4>
+                      <Badge variant="secondary" className="text-xs">
+                        {service.option}
+                      </Badge>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     </section>
   )

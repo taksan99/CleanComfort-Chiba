@@ -5,148 +5,93 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { useToast } from "@/components/ui/use-toast"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
-interface StrengthItem {
-  icon: string
+interface Strength {
   title: string
   description: string
 }
 
-const initialStrengths: StrengthItem[] = [
+const initialStrengths: Strength[] = [
   {
-    icon: "⚡",
-    title: "最短翌日対応",
-    description: "お急ぎのご依頼にも迅速に対応いたします",
+    title: "翌日対応、365日対応",
+    description: "お急ぎの方も安心。年中無休でサービスを提供しています。",
   },
   {
-    icon: "🕐",
-    title: "365日対応",
-    description: "年中無休でお客様のご要望にお応えします",
-  },
-  {
-    icon: "👨‍🔧",
     title: "経験豊富なプロのスタッフ",
-    description: "確かな技術と豊富な経験を持つスタッフが対応",
+    description: "熟練のスタッフが丁寧に作業いたします。",
   },
   {
-    icon: "🌱",
     title: "エコフレンドリーな洗剤使用",
-    description: "環境に優しい洗剤で安心・安全なクリーニング",
+    description: "環境と健康に配慮した安全な洗剤を使用しています。",
   },
   {
-    icon: "🏠",
     title: "地域密着で安心",
-    description: "千葉県を中心とした地域密着型のサービス",
+    description: "千葉県の地域事情を熟知したスタッフが対応します。",
   },
 ]
 
 export default function StrengthsEditor() {
-  const [strengths, setStrengths] = useState<StrengthItem[]>(initialStrengths)
-  const { toast } = useToast()
+  const [strengths, setStrengths] = useState<Strength[]>(initialStrengths)
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch("/api/site-content?section=strengths")
-        const data = await response.json()
-        if (data && Array.isArray(data)) {
-          setStrengths(data)
-        }
-      } catch (error) {
-        console.error("Error fetching strengths:", error)
-        // Fallback to localStorage
-        const saved = localStorage.getItem("strengthsContent")
-        if (saved) {
-          setStrengths(JSON.parse(saved))
-        }
-      }
+    const savedStrengths = localStorage.getItem("strengthsContent")
+    if (savedStrengths) {
+      setStrengths(JSON.parse(savedStrengths))
     }
-
-    fetchData()
   }, [])
 
-  const handleSave = async () => {
-    try {
-      const response = await fetch("/api/site-content", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          section: "strengths",
-          content: strengths,
-        }),
-      })
-
-      if (response.ok) {
-        localStorage.setItem("strengthsContent", JSON.stringify(strengths))
-        toast({
-          title: "保存完了",
-          description: "私たちの強みの内容が保存されました。",
-        })
-      } else {
-        throw new Error("Failed to save")
-      }
-    } catch (error) {
-      console.error("Error saving strengths:", error)
-      toast({
-        title: "エラー",
-        description: "保存に失敗しました。",
-        variant: "destructive",
-      })
-    }
-  }
-
-  const updateStrength = (index: number, field: keyof StrengthItem, value: string) => {
+  const handleChange = (index: number, field: keyof Strength, value: string) => {
     const newStrengths = [...strengths]
     newStrengths[index] = { ...newStrengths[index], [field]: value }
     setStrengths(newStrengths)
   }
 
-  return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">私たちの強み</h3>
-        <Button onClick={handleSave}>保存</Button>
-      </div>
+  const handleSave = () => {
+    localStorage.setItem("strengthsContent", JSON.stringify(strengths))
+    alert("私たちの強みの内容が保存されました。")
+  }
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+  return (
+    <div className="space-y-4">
+      <Tabs defaultValue="strength0">
+        <TabsList>
+          {strengths.map((_, index) => (
+            <TabsTrigger key={index} value={`strength${index}`}>
+              {initialStrengths[index].title}
+            </TabsTrigger>
+          ))}
+        </TabsList>
         {strengths.map((strength, index) => (
-          <Card key={index}>
-            <CardHeader>
-              <CardTitle>強み {index + 1}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">アイコン</label>
-                <Input
-                  value={strength.icon}
-                  onChange={(e) => updateStrength(index, "icon", e.target.value)}
-                  placeholder="⚡"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">タイトル</label>
-                <Input
-                  value={strength.title}
-                  onChange={(e) => updateStrength(index, "title", e.target.value)}
-                  placeholder="タイトルを入力"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">説明</label>
-                <Textarea
-                  value={strength.description}
-                  onChange={(e) => updateStrength(index, "description", e.target.value)}
-                  placeholder="説明を入力"
-                  rows={3}
-                />
-              </div>
-            </CardContent>
-          </Card>
+          <TabsContent key={index} value={`strength${index}`}>
+            <Card>
+              <CardHeader>
+                <CardTitle>{initialStrengths[index].title}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <label className="block mb-2">タイトル</label>
+                  <Input
+                    value={strength.title}
+                    onChange={(e) => handleChange(index, "title", e.target.value)}
+                    placeholder="タイトル"
+                  />
+                </div>
+                <div>
+                  <label className="block mb-2">説明</label>
+                  <Textarea
+                    value={strength.description}
+                    onChange={(e) => handleChange(index, "description", e.target.value)}
+                    placeholder="説明"
+                    rows={3}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
         ))}
-      </div>
+      </Tabs>
+      <Button onClick={handleSave}>保存</Button>
     </div>
   )
 }

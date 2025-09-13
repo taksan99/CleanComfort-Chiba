@@ -1,16 +1,10 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Users, Repeat, Sparkles } from "lucide-react"
-import AnimatedSection from "./AnimatedSection"
-import { motion } from "framer-motion"
-import { useImageUrls } from "@/app/hooks/useImageUrls"
-import ErrorMessage from "./ErrorMessage"
-
-const ShiningDiscount = ({ text }: { text: string }) => (
-  <span className="inline-block text-5xl font-bold text-yellow-300 animate-pulse shadow-lg">{text}</span>
-)
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Gift, Users } from "lucide-react"
 
 interface PromotionCard {
   id: string
@@ -52,13 +46,15 @@ export default function Promotions() {
   const [promotions, setPromotions] = useState<PromotionCard[]>(initialPromotions)
   const [campaignText, setCampaignText] = useState("最大50%OFF！　春のお掃除キャンペーン実施中！")
 
-  const imageSections = useMemo(() => ["promotionsBackgroundImage"], [])
-  const { imageUrls, isLoading, error } = useImageUrls()
-
   useEffect(() => {
     const savedPromotions = localStorage.getItem("promotionsContent")
     if (savedPromotions) {
-      setPromotions(JSON.parse(savedPromotions))
+      try {
+        const parsedPromotions = JSON.parse(savedPromotions)
+        setPromotions(parsedPromotions)
+      } catch (error) {
+        console.error("Error parsing saved promotions:", error)
+      }
     }
 
     const savedCampaignText = localStorage.getItem("promotionsCampaignText")
@@ -67,99 +63,52 @@ export default function Promotions() {
     }
   }, [])
 
-  if (isLoading) {
-    return <div>Loading...</div>
-  }
-
-  if (error) {
-    return <ErrorMessage message="プロモーションの背景画像の読み込みに失敗しました" />
-  }
-
-  const backgroundImage = imageUrls.promotionsBackgroundImage?.url || "/placeholder.svg"
-
-  const currentDate = new Date().toISOString().split("T")[0]
-  const activePromotions = promotions.filter(
-    (promo) => promo.isActive && promo.startDate <= currentDate && promo.endDate >= currentDate,
-  )
-
-  // A/Bテストのためのバリアント選択
-  const getVariant = (id: string) => {
-    const storedVariant = localStorage.getItem(`promotion_variant_${id}`)
-    if (storedVariant) {
-      return storedVariant as "A" | "B"
-    }
-    const newVariant = Math.random() < 0.5 ? "A" : "B"
-    localStorage.setItem(`promotion_variant_${id}`, newVariant)
-    return newVariant
-  }
+  // アクティブなプロモーションのみを表示
+  const activePromotions = promotions.filter((promotion) => promotion.isActive)
 
   return (
-    <section
-      id="promotions"
-      className="relative bg-cover bg-center bg-no-repeat py-16"
-      style={{ backgroundImage: `url(${backgroundImage})`, backgroundAttachment: "fixed" }}
-    >
-      <div className="absolute inset-0 bg-black opacity-10"></div>
+    <section id="promotions" className="py-20 bg-gradient-to-br from-red-50 to-pink-100">
       <div className="container mx-auto px-4">
-        <h2 className="text-3xl font-bold text-center mb-12 text-gray-800 bg-white bg-opacity-75 p-4 rounded-lg shadow-lg">
-          お得な特典
-        </h2>
-        <AnimatedSection>
-          <div className="flex flex-wrap justify-center gap-8 mx-4">
-            {activePromotions.map((promotion, index) => {
-              const variant = getVariant(promotion.id)
-              const cardColor = index % 2 === 0 ? "from-blue-500 to-blue-700" : "from-green-500 to-green-700"
-              return (
-                <motion.div
-                  key={promotion.id}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.5, delay: index * 0.2 }}
-                  className="w-full md:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1rem)]"
-                >
-                  <Card
-                    className={`bg-gradient-to-br ${cardColor} text-white hover:shadow-2xl transition-shadow duration-300 h-full flex flex-col justify-between`}
-                  >
-                    <CardHeader>
-                      <CardTitle
-                        className="flex items-center text-2xl"
-                        style={{ textShadow: "2px 2px 4px rgba(0,0,0,0.3)" }}
-                      >
-                        {index % 2 === 0 ? <Users className="h-8 w-8 mr-2" /> : <Repeat className="h-8 w-8 mr-2" />}
-                        {promotion.title}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="flex flex-col justify-between h-full">
-                      <div>
-                        <p className="text-lg mb-4" style={{ textShadow: "1px 1px 2px rgba(0,0,0,0.2)" }}>
-                          {variant === "A" ? promotion.description : `${promotion.description}`}
-                        </p>
-                        <ShiningDiscount text={promotion.discount} />
-                      </div>
-                      {promotion.note && <p className="mt-4 text-sm">{promotion.note}</p>}
-                      <p className="mt-2 text-sm">有効期限: {new Date(promotion.endDate).toLocaleDateString()}まで</p>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              )
-            })}
-          </div>
-          <motion.div
-            className="mt-8 text-center"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-          >
-            <Card className="bg-gradient-to-r from-pink-400 via-pink-500 to-rose-500 text-white inline-block hover:shadow-2xl transition-shadow duration-300">
-              <CardContent className="p-4">
-                <Sparkles className="h-6 w-6 inline-block mr-2" />
-                <span className="text-lg font-semibold" style={{ textShadow: "1px 1px 2px rgba(0,0,0,0.2)" }}>
-                  {campaignText}
-                </span>
+        <div className="text-center mb-16">
+          <h2 className="text-4xl font-bold text-gray-800 mb-4">お得な特典</h2>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            お客様への感謝を込めて、様々な特典をご用意しています。
+          </p>
+
+          {campaignText && (
+            <div className="mt-8 p-4 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg shadow-lg">
+              <p className="text-lg font-bold">{campaignText}</p>
+            </div>
+          )}
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          {activePromotions.map((promotion, index) => (
+            <Card
+              key={promotion.id}
+              className="hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2"
+            >
+              <CardHeader className="text-center pb-4">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-red-500 to-pink-600 flex items-center justify-center">
+                  {promotion.title.includes("紹介") ? (
+                    <Users className="w-8 h-8 text-white" />
+                  ) : (
+                    <Gift className="w-8 h-8 text-white" />
+                  )}
+                </div>
+                <CardTitle className="text-2xl font-bold text-gray-800">{promotion.title}</CardTitle>
+              </CardHeader>
+              <CardContent className="text-center">
+                <p className="text-gray-600 mb-4">{promotion.description}</p>
+                <Badge variant="destructive" className="text-2xl font-bold py-2 px-4 mb-4">
+                  {promotion.discount}
+                </Badge>
+                {promotion.note && <p className="text-sm text-gray-500 mb-6">{promotion.note}</p>}
+                <Button className="w-full">詳細を見る</Button>
               </CardContent>
             </Card>
-          </motion.div>
-        </AnimatedSection>
+          ))}
+        </div>
       </div>
     </section>
   )

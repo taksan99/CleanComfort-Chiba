@@ -1,12 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
-import { ChevronDown, ChevronUp } from "lucide-react"
-import AnimatedSection from "./AnimatedSection"
-import { useImageUrls } from "@/app/hooks/useImageUrls"
-import ErrorMessage from "./ErrorMessage"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 
 interface FAQItem {
   question: string
@@ -43,93 +38,75 @@ const initialFAQs: FAQItem[] = [
     answer:
       "はい、全スタッフの身元確認を行っており、研修も徹底しています。また、貴重品等は事前にお客様ご自身で管理をお願いしております。",
   },
+  {
+    question: "料金体系はどうなっていますか？",
+    answer:
+      "各サービスには基本料金が設定されています。例えば、水回り5点セットは68,000円～、通常エアコンクリーニングは12,000円～となっています。ただし、作業の難易度や追加オプションによって料金が変動する場合があります。詳細な料金はお気軽にお問い合わせください。",
+  },
+  {
+    question: "現地での確認や調査は必要ですか？",
+    answer:
+      "はい。すべてのサービスにおいて、現地での確認・調査が必要です。正確な見積もりと適切なサービス提供が可能となります。",
+  },
+  {
+    question: "エアコンクリーニングの保証について教えてください。",
+    answer:
+      "10年以上前のエアコンについては、すでにメーカーの製造が終了しており、パーツが入手できない場合があるため、保証外となる可能性があります。ご了承ください。",
+  },
+  {
+    question: "高所作業の場合、追加料金はかかりますか？",
+    answer:
+      "はい。3m以上の高所作業の場合、+2,000円の追加料金がかかります。高所作業の例としては、浴室、窓ガラスクリーニング、シャンデリアなどが挙げられます。",
+  },
+  {
+    question: "サブスクリプションサービスはいつから利用できますか？",
+    answer:
+      "サブスクリプションサービスは、エアコンクリーニング、ハウスクリーニング、便利屋サービスのいずれかを最低一度ご利用いただいた後にご利用いただけます。初回からのご利用はお問い合わせください（初回利用の場合、現地調査を必須とさせていただきます）。",
+  },
+  {
+    question: "浴室クリーニングの当日対応は可能ですか？",
+    answer:
+      "当日対応は可能ですが、作業員が不足している場合、サービスの全作業を当日中に完了できない可能性があります。その際は、翌日以降に作業を継続することがございますので、ご了承ください。",
+  },
 ]
 
 export default function FAQ() {
   const [faqs, setFaqs] = useState<FAQItem[]>(initialFAQs)
-  const [openItems, setOpenItems] = useState<number[]>([])
-  const { imageUrls, isLoading, error } = useImageUrls()
 
   useEffect(() => {
-    const fetchData = async () => {
+    const savedFAQs = localStorage.getItem("faqContent")
+    if (savedFAQs) {
       try {
-        const response = await fetch("/api/site-content?section=faq")
-        const data = await response.json()
-        if (data && Array.isArray(data)) {
-          setFaqs(data)
-        }
+        const parsedFAQs = JSON.parse(savedFAQs)
+        setFaqs(parsedFAQs)
       } catch (error) {
-        console.error("Error fetching FAQs:", error)
-        // Fallback to localStorage
-        const savedFAQs = localStorage.getItem("faqContent")
-        if (savedFAQs) {
-          setFaqs(JSON.parse(savedFAQs))
-        }
+        console.error("Error parsing saved FAQs:", error)
       }
     }
-
-    fetchData()
   }, [])
 
-  const toggleItem = (index: number) => {
-    setOpenItems((prev) => (prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]))
-  }
-
-  if (isLoading) {
-    return <div>Loading...</div>
-  }
-
-  if (error) {
-    return <ErrorMessage message={error.message} />
-  }
-
-  const backgroundImage = imageUrls.faqBackgroundImage?.url || "/placeholder.svg"
-
   return (
-    <section
-      className="relative bg-cover bg-center bg-no-repeat py-16"
-      style={{
-        backgroundImage: `url(${backgroundImage})`,
-        backgroundAttachment: "fixed",
-      }}
-    >
-      <div className="absolute inset-0 bg-black opacity-20"></div>
+    <section id="faq" className="py-20 bg-gradient-to-br from-gray-50 to-blue-50">
       <div className="container mx-auto px-4">
-        <h2 className="text-3xl font-bold text-center mb-12 text-gray-800 bg-white bg-opacity-75 p-4 rounded-lg shadow-lg">
-          よくある質問
-        </h2>
-        <AnimatedSection>
-          <div className="max-w-4xl mx-auto space-y-4">
+        <div className="text-center mb-16">
+          <h2 className="text-4xl font-bold text-gray-800 mb-4">よくある質問</h2>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">お客様からよくいただくご質問にお答えします。</p>
+        </div>
+
+        <div className="max-w-4xl mx-auto">
+          <Accordion type="single" collapsible className="space-y-4">
             {faqs.map((faq, index) => (
-              <Card key={index} className="bg-white bg-opacity-90">
-                <Collapsible>
-                  <CollapsibleTrigger className="w-full" onClick={() => toggleItem(index)}>
-                    <CardHeader className="hover:bg-gray-50 transition-colors">
-                      <CardTitle className="flex justify-between items-center text-left">
-                        <span style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)" }}>{faq.question}</span>
-                        {openItems.includes(index) ? (
-                          <ChevronUp className="h-5 w-5" />
-                        ) : (
-                          <ChevronDown className="h-5 w-5" />
-                        )}
-                      </CardTitle>
-                    </CardHeader>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <CardContent>
-                      <p
-                        className="text-gray-700"
-                        style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)", whiteSpace: "pre-wrap" }}
-                      >
-                        {faq.answer}
-                      </p>
-                    </CardContent>
-                  </CollapsibleContent>
-                </Collapsible>
-              </Card>
+              <AccordionItem key={index} value={`item-${index}`} className="bg-white rounded-lg shadow-sm">
+                <AccordionTrigger className="px-6 py-4 text-left hover:no-underline">
+                  <span className="font-semibold text-gray-800">{faq.question}</span>
+                </AccordionTrigger>
+                <AccordionContent className="px-6 pb-4">
+                  <p className="text-gray-600 leading-relaxed">{faq.answer}</p>
+                </AccordionContent>
+              </AccordionItem>
             ))}
-          </div>
-        </AnimatedSection>
+          </Accordion>
+        </div>
       </div>
     </section>
   )

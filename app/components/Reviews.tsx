@@ -1,12 +1,9 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useState, useEffect } from "react"
+import { Card, CardContent } from "@/components/ui/card"
 import { Star } from "lucide-react"
-import AnimatedSection from "./AnimatedSection"
-import { useImageUrls } from "@/app/hooks/useImageUrls"
-import ImageWithFallback from "./ImageWithFallback"
-import ErrorMessage from "./ErrorMessage"
+import { useImageUrls } from "../hooks/useImageUrls"
 
 interface Review {
   name: string
@@ -68,103 +65,60 @@ const initialReviews: Review[] = [
 ]
 
 export default function Reviews() {
-  const [reviews, setReviews] = useState(initialReviews)
-  const imageSections = useMemo(
-    () => [
-      "reviewsBackgroundImage",
-      ...Array(6)
-        .fill(0)
-        .map((_, i) => `review${i}`),
-    ],
-    [],
-  )
-  const { imageUrls, isLoading, error } = useImageUrls()
+  const { imageUrls } = useImageUrls()
+  const [reviews, setReviews] = useState<Review[]>(initialReviews)
 
   useEffect(() => {
-    const fetchData = async () => {
+    const savedReviews = localStorage.getItem("reviewsContent")
+    if (savedReviews) {
       try {
-        const response = await fetch("/api/site-content?section=reviews")
-        const data = await response.json()
-        if (data && Array.isArray(data)) {
-          setReviews(data)
-        }
+        const parsedReviews = JSON.parse(savedReviews)
+        setReviews(parsedReviews)
       } catch (error) {
-        console.error("Error fetching reviews:", error)
-        // Fallback to localStorage
-        const savedReviews = localStorage.getItem("reviewsContent")
-        if (savedReviews) {
-          setReviews(JSON.parse(savedReviews))
-        }
+        console.error("Error parsing saved reviews:", error)
       }
     }
-
-    fetchData()
   }, [])
 
-  if (isLoading) {
-    return <div>Loading...</div>
-  }
-
-  if (error) {
-    return <ErrorMessage message={error.message} />
-  }
-
-  // Safely access the reviewsImage URL or use a fallback
-  const backgroundImage = imageUrls?.reviewsBackgroundImage?.url || "/placeholder.svg"
-
   return (
-    <section
-      className="relative bg-cover bg-center bg-no-repeat py-16"
-      style={{
-        backgroundImage: `url(${backgroundImage})`,
-        backgroundAttachment: "fixed",
-      }}
-    >
-      <div className="absolute inset-0 bg-black opacity-20"></div>
+    <section id="reviews" className="py-20 bg-gradient-to-br from-yellow-50 to-orange-100">
       <div className="container mx-auto px-4">
-        <h2 className="text-3xl font-bold text-center mb-12 text-gray-800 bg-white bg-opacity-75 p-4 rounded-lg shadow-lg">
-          お客様の声
-        </h2>
-        <AnimatedSection>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {reviews.map((review, index) => {
-              // Safely access the review image URL or use a fallback
-              const reviewImageUrl = imageUrls?.[`review${index}`]?.url || "/placeholder.svg"
-              return (
-                <Card key={index} className="hover:shadow-lg transition-shadow duration-300 bg-white bg-opacity-90">
-                  <CardHeader>
-                    <div className="flex items-center space-x-4">
-                      <ImageWithFallback
-                        src={reviewImageUrl || "/placeholder.svg"}
-                        fallbackSrc="/placeholder.svg"
-                        alt={review.name}
-                        width={64}
-                        height={64}
-                        className="rounded-full border-2 border-white shadow-md"
-                      />
-                      <div>
-                        <CardTitle style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)" }}>{review.name}</CardTitle>
-                        <p className="text-sm text-gray-600" style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)" }}>
-                          {review.age}歳 {review.occupation}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex mt-2">
-                      {[...Array(review.rating)].map((_, i) => (
-                        <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
-                      ))}
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-gray-700 italic" style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)" }}>
-                      "{review.comment}"
+        <div className="text-center mb-16">
+          <h2 className="text-4xl font-bold text-gray-800 mb-4">お客様の声</h2>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            実際にサービスをご利用いただいたお客様からの嬉しいお声をご紹介します。
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {reviews.map((review, index) => (
+            <Card key={index} className="hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
+              <CardContent className="p-6">
+                <div className="flex items-center mb-4">
+                  <img
+                    src={imageUrls[`review${index || "/placeholder.svg"}`]?.url || "/placeholder.svg"}
+                    alt={review.name}
+                    className="w-12 h-12 rounded-full mr-4 object-cover"
+                  />
+                  <div>
+                    <h3 className="font-semibold text-gray-800">{review.name}</h3>
+                    <p className="text-sm text-gray-600">
+                      {review.age}歳 / {review.occupation}
                     </p>
-                  </CardContent>
-                </Card>
-              )
-            })}
-          </div>
-        </AnimatedSection>
+                  </div>
+                </div>
+
+                <div className="flex mb-4">
+                  {[...Array(review.rating)].map((_, i) => (
+                    <Star key={i} className="w-5 h-5 text-yellow-400 fill-current" />
+                  ))}
+                </div>
+
+                <p className="text-gray-700 text-sm leading-relaxed italic">"{review.comment}"</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     </section>
   )

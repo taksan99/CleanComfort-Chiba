@@ -75,24 +75,10 @@ export default function ReviewsEditor() {
   const { imageUrls, refreshImages } = useImageUrls()
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch("/api/site-content?section=reviews")
-        const data = await response.json()
-        if (data && Array.isArray(data)) {
-          setReviews(data)
-        }
-      } catch (error) {
-        console.error("Error fetching reviews:", error)
-        // Fallback to localStorage
-        const savedReviews = localStorage.getItem("reviewsContent")
-        if (savedReviews) {
-          setReviews(JSON.parse(savedReviews))
-        }
-      }
+    const savedReviews = localStorage.getItem("reviewsContent")
+    if (savedReviews) {
+      setReviews(JSON.parse(savedReviews))
     }
-
-    fetchData()
   }, [])
 
   const handleChange = (index: number, field: keyof Review, value: string | number) => {
@@ -111,29 +97,9 @@ export default function ReviewsEditor() {
     setReviews(newReviews)
   }
 
-  const handleSave = async () => {
-    try {
-      const response = await fetch("/api/site-content", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          section: "reviews",
-          content: reviews,
-        }),
-      })
-
-      if (response.ok) {
-        localStorage.setItem("reviewsContent", JSON.stringify(reviews))
-        alert("お客様の声の内容が保存されました。")
-      } else {
-        throw new Error("Failed to save")
-      }
-    } catch (error) {
-      console.error("Error saving reviews:", error)
-      alert("保存中にエラーが発生しました。")
-    }
+  const handleSave = () => {
+    localStorage.setItem("reviewsContent", JSON.stringify(reviews))
+    alert("お客様の声の内容が保存されました。")
   }
 
   const handleImageUpload = async (file: File, index: number) => {

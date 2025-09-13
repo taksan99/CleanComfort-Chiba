@@ -1,25 +1,17 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import AnimatedSection from "./AnimatedSection"
-import { Droplet, Wind, Wrench } from "lucide-react"
-import ErrorMessage from "./ErrorMessage"
-import { useImageUrls } from "@/app/hooks/useImageUrls"
+import { Button } from "@/components/ui/button"
+import { Droplets, Wind, Wrench } from "lucide-react"
 
 export interface PricingCategory {
   category: string
-  icon: "Droplet" | "Wind" | "Wrench"
+  icon: string
   color: string
   textColor: string
   borderColor: string
   items: { service: string; price: string }[]
-}
-
-const iconMap = {
-  Droplet: Droplet,
-  Wind: Wind,
-  Wrench: Wrench,
 }
 
 const initialPricingData: PricingCategory[] = [
@@ -70,111 +62,79 @@ const initialPricingData: PricingCategory[] = [
 
 export default function PricingOverview() {
   const [pricingData, setPricingData] = useState<PricingCategory[]>(initialPricingData)
-  const maxItems = Math.max(...pricingData.map((category) => category.items.length))
-
-  const imageSections = useMemo(() => ["pricingOverviewBackgroundImage"], [])
-  // const { imageUrls, isLoading, error } = useMultipleImageCache(imageSections)
-  const { imageUrls, isLoading, error } = useImageUrls()
 
   useEffect(() => {
-    const fetchData = async () => {
+    const savedPricingData = localStorage.getItem("pricingOverviewContent")
+    if (savedPricingData) {
       try {
-        const response = await fetch("/api/site-content?section=pricingOverview")
-        const data = await response.json()
-        if (data && Array.isArray(data) && data.length > 0) {
-          setPricingData(data)
-        }
+        const parsedPricingData = JSON.parse(savedPricingData)
+        setPricingData(parsedPricingData)
       } catch (error) {
-        console.error("Error fetching pricing data:", error)
-        // Fallback to localStorage
-        const savedPricingData = localStorage.getItem("pricingOverviewContent")
-        if (savedPricingData) {
-          try {
-            const parsedData = JSON.parse(savedPricingData)
-            if (Array.isArray(parsedData) && parsedData.length > 0) {
-              setPricingData(parsedData)
-            }
-          } catch (error) {
-            console.error("Error parsing saved pricing data:", error)
-          }
-        }
+        console.error("Error parsing saved pricing data:", error)
       }
     }
-
-    fetchData()
   }, [])
 
-  if (isLoading) {
-    return <div>Loading...</div>
+  const getIconComponent = (iconName: string) => {
+    switch (iconName) {
+      case "Droplet":
+        return <Droplets className="w-8 h-8 text-blue-600" />
+      case "Wind":
+        return <Wind className="w-8 h-8 text-green-600" />
+      case "Wrench":
+        return <Wrench className="w-8 h-8 text-yellow-600" />
+      default:
+        return <Droplets className="w-8 h-8 text-blue-600" />
+    }
   }
-
-  if (error) {
-    return <ErrorMessage message={error.message} />
-  }
-
-  const backgroundImage = imageUrls.pricingOverviewBackgroundImage?.url || "/placeholder.svg"
 
   return (
-    <section
-      id="pricing-overview"
-      className="relative bg-cover bg-center bg-no-repeat py-16"
-      style={{
-        backgroundImage: `url(${backgroundImage})`,
-        backgroundAttachment: "fixed",
-      }}
-    >
-      <div className="absolute inset-0 bg-white opacity-20"></div>
+    <section id="pricing-overview" className="py-20 bg-gradient-to-br from-gray-50 to-blue-50">
       <div className="container mx-auto px-4">
-        <h2 className="text-3xl font-bold text-center mb-12 text-gray-800 bg-white bg-opacity-75 p-4 rounded-lg shadow-lg">
-          料金体系（基本サービス）
-        </h2>
-        <AnimatedSection>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {pricingData.map((category) => {
-              const Icon = iconMap[category.icon]
-              return (
-                <Card
-                  key={category.category}
-                  className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 bg-white bg-opacity-90"
-                >
-                  <CardHeader className={`bg-gradient-to-r ${category.color} text-white`}>
-                    <CardTitle
-                      className="flex items-center justify-between"
-                      style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)" }}
-                    >
-                      <span>{category.category}</span>
-                      <Icon className="h-6 w-6" />
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-6">
-                    <ul className="space-y-4" style={{ minHeight: `${maxItems * 2.5}rem` }}>
-                      {category.items.map((item) => (
-                        <li
-                          key={item.service}
-                          className={`flex justify-between items-center border-b ${category.borderColor} pb-2`}
-                        >
-                          <span
-                            className={`${category.textColor} pl-4 border-l-4 ${category.borderColor}`}
-                            style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)" }}
-                          >
-                            {item.service}
-                          </span>
-                          <span className="font-semibold" style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)" }}>
-                            {item.price}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </CardContent>
-                </Card>
-              )
-            })}
-          </div>
-        </AnimatedSection>
-        <div className="text-center mt-8">
-          <p className="text-sm text-gray-800 bg-white bg-opacity-75 p-2 rounded-lg inline-block mx-auto">
-            ※ 料金は目安です。詳細は無料見積もりをご利用ください。出張費が別途かかる場合があります。
+        <div className="text-center mb-16">
+          <h2 className="text-4xl font-bold text-gray-800 mb-4">料金体系</h2>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            明確で分かりやすい料金設定。お客様のニーズに合わせたプランをご用意しています。
           </p>
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-8">
+          {pricingData.map((category, index) => (
+            <Card key={index} className="hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
+              <CardHeader className="text-center pb-4">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                  {getIconComponent(category.icon)}
+                </div>
+                <CardTitle className="text-2xl font-bold text-gray-800">{category.category}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {category.items.map((item, itemIndex) => (
+                    <div key={itemIndex} className="flex justify-between items-start p-3 rounded-lg hover:bg-gray-50">
+                      <div className="flex-1 pr-2">
+                        <span className="text-sm text-gray-700 leading-relaxed">{item.service}</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="font-semibold text-gray-800 whitespace-nowrap">{item.price}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-6">
+                  <Button className="w-full">詳細を見る</Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        <div className="text-center mt-12">
+          <p className="text-gray-600 mb-4">
+            ※ 料金は作業内容や現場の状況により変動する場合があります。詳細はお気軽にお問い合わせください。
+          </p>
+          <Button size="lg" className="px-8">
+            無料見積もりを依頼する
+          </Button>
         </div>
       </div>
     </section>

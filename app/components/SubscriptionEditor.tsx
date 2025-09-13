@@ -6,48 +6,69 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Plus, Trash2 } from "lucide-react"
 
 interface SubscriptionPlan {
   name: string
   price: string
   description: string
   features: string[]
-  popular?: boolean
+  limits: string
+  color: string
+  buttonColor: string
+  ribbonColor: string
 }
 
 const initialPlans: SubscriptionPlan[] = [
   {
     name: "ベーシック",
-    price: "月額 15,000円",
-    description: "基本的なハウスケアサービス",
-    features: ["月1回のハウスクリーニング", "エアコンクリーニング（年2回）", "24時間サポート"],
+    price: "9,800",
+    description: "月1回の基本清掃",
+    features: [
+      "リビング・キッチン清掃",
+      "浴室・トイレ清掃",
+      "掃除機がけ・拭き掃除",
+      "洗濯1回分（乾燥・たたみ含む）",
+      "ゴミ出し",
+    ],
+    limits: "40㎡までの物件対象。それ以上の物件は追加料金で対応可能。",
+    color: "bg-blue-100",
+    buttonColor: "bg-blue-500 hover:bg-blue-600",
+    ribbonColor: "from-yellow-600 to-yellow-800",
   },
   {
     name: "スタンダード",
-    price: "月額 25,000円",
-    description: "充実したハウスケアサービス",
+    price: "19,800",
+    description: "月2回の総合清掃",
     features: [
-      "月2回のハウスクリーニング",
-      "エアコンクリーニング（年4回）",
-      "便利屋サービス（月1回）",
-      "24時間サポート",
-      "優先対応",
+      "ベーシックプランの全内容",
+      "エアコンフィルター清掃",
+      "冷蔵庫・電子レンジ清掃",
+      "窓ガラス・網戸清掃",
+      "洗濯2回分（乾燥・たたみ含む）",
+      "布団干し",
     ],
-    popular: true,
+    limits: "60㎡までの物件対象。それ以上の物件は追加料金で対応可能。",
+    color: "bg-green-100",
+    buttonColor: "bg-green-500 hover:bg-green-600",
+    ribbonColor: "from-gray-400 to-gray-600",
   },
   {
     name: "プレミアム",
-    price: "月額 40,000円",
-    description: "最高級のハウスケアサービス",
+    price: "59,800",
+    description: "月3回の徹底清掃＋家事代行",
     features: [
-      "週1回のハウスクリーニング",
-      "エアコンクリーニング（年6回）",
-      "便利屋サービス（月2回）",
-      "24時間サポート",
-      "最優先対応",
-      "専任スタッフ",
+      "スタンダードプランの全内容",
+      "クローゼット整理",
+      "ベッドメイキング",
+      "アイロンがけ",
+      "買い物代行",
+      "植物の水やり・ペットのお世話",
+      "靴磨き",
     ],
+    limits: "80㎡までの物件対象。それ以上の物件は追加料金で対応可能。",
+    color: "bg-yellow-100",
+    buttonColor: "bg-yellow-500 hover:bg-yellow-600",
+    ribbonColor: "from-yellow-400 to-yellow-600",
   },
 ]
 
@@ -55,97 +76,49 @@ export default function SubscriptionEditor() {
   const [plans, setPlans] = useState<SubscriptionPlan[]>(initialPlans)
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch("/api/site-content?section=subscription")
-        const data = await response.json()
-        if (data && Array.isArray(data)) {
-          setPlans(data)
-        }
-      } catch (error) {
-        console.error("Error fetching subscription plans:", error)
-        // Fallback to localStorage
-        const savedPlans = localStorage.getItem("subscriptionContent")
-        if (savedPlans) {
-          setPlans(JSON.parse(savedPlans))
-        }
-      }
+    const savedPlans = localStorage.getItem("subscriptionPlans")
+    if (savedPlans) {
+      setPlans(JSON.parse(savedPlans))
     }
-
-    fetchData()
   }, [])
 
-  const handlePlanChange = (index: number, field: keyof SubscriptionPlan, value: string | boolean) => {
+  const handlePlanChange = (index: number, field: keyof SubscriptionPlan, value: string | string[]) => {
     const newPlans = [...plans]
-    newPlans[index] = { ...newPlans[index], [field]: value }
-    setPlans(newPlans)
-  }
-
-  const handleFeatureChange = (planIndex: number, featureIndex: number, value: string) => {
-    const newPlans = [...plans]
-    newPlans[planIndex].features[featureIndex] = value
-    setPlans(newPlans)
-  }
-
-  const handleAddFeature = (planIndex: number) => {
-    const newPlans = [...plans]
-    newPlans[planIndex].features.push("")
-    setPlans(newPlans)
-  }
-
-  const handleRemoveFeature = (planIndex: number, featureIndex: number) => {
-    const newPlans = [...plans]
-    newPlans[planIndex].features.splice(featureIndex, 1)
-    setPlans(newPlans)
-  }
-
-  const handleSave = async () => {
-    try {
-      const response = await fetch("/api/site-content", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          section: "subscription",
-          content: plans,
-        }),
-      })
-
-      if (response.ok) {
-        localStorage.setItem("subscriptionContent", JSON.stringify(plans))
-        alert("サブスクリプションプランの内容が保存されました。")
-      } else {
-        throw new Error("Failed to save")
-      }
-    } catch (error) {
-      console.error("Error saving subscription plans:", error)
-      alert("保存中にエラーが発生しました。")
+    if (field === "features") {
+      newPlans[index][field] = (value as string).split("\n").filter((feature) => feature.trim() !== "")
+    } else {
+      newPlans[index][field] = value as string
     }
+    setPlans(newPlans)
+  }
+
+  const handleSave = () => {
+    localStorage.setItem("subscriptionPlans", JSON.stringify(plans))
+    alert("サブスクリプションプランの内容が保存されました。")
   }
 
   return (
     <div className="space-y-4">
       <Tabs defaultValue="plan0">
         <TabsList>
-          {plans.map((_, index) => (
+          {plans.map((plan, index) => (
             <TabsTrigger key={index} value={`plan${index}`}>
-              {initialPlans[index]?.name || `プラン ${index + 1}`}
+              {plan.name}
             </TabsTrigger>
           ))}
         </TabsList>
-        {plans.map((plan, planIndex) => (
-          <TabsContent key={planIndex} value={`plan${planIndex}`}>
+        {plans.map((plan, index) => (
+          <TabsContent key={index} value={`plan${index}`}>
             <Card>
               <CardHeader>
-                <CardTitle>{plan.name}</CardTitle>
+                <CardTitle>{plan.name}プラン</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
                   <label className="block mb-2">プラン名</label>
                   <Input
                     value={plan.name}
-                    onChange={(e) => handlePlanChange(planIndex, "name", e.target.value)}
+                    onChange={(e) => handlePlanChange(index, "name", e.target.value)}
                     placeholder="プラン名"
                   />
                 </div>
@@ -153,41 +126,58 @@ export default function SubscriptionEditor() {
                   <label className="block mb-2">価格</label>
                   <Input
                     value={plan.price}
-                    onChange={(e) => handlePlanChange(planIndex, "price", e.target.value)}
+                    onChange={(e) => handlePlanChange(index, "price", e.target.value)}
                     placeholder="価格"
                   />
                 </div>
                 <div>
                   <label className="block mb-2">説明</label>
-                  <Textarea
+                  <Input
                     value={plan.description}
-                    onChange={(e) => handlePlanChange(planIndex, "description", e.target.value)}
+                    onChange={(e) => handlePlanChange(index, "description", e.target.value)}
                     placeholder="説明"
-                    rows={3}
                   />
                 </div>
                 <div>
-                  <label className="block mb-2">特徴</label>
-                  {plan.features.map((feature, featureIndex) => (
-                    <div key={featureIndex} className="flex space-x-2 mb-2">
-                      <Input
-                        value={feature}
-                        onChange={(e) => handleFeatureChange(planIndex, featureIndex, e.target.value)}
-                        placeholder="特徴"
-                      />
-                      <Button
-                        variant="destructive"
-                        size="icon"
-                        onClick={() => handleRemoveFeature(planIndex, featureIndex)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                  <Button variant="outline" onClick={() => handleAddFeature(planIndex)} className="mt-2">
-                    <Plus className="h-4 w-4 mr-2" />
-                    特徴を追加
-                  </Button>
+                  <label className="block mb-2">特徴（1行に1つずつ入力してください）</label>
+                  <Textarea
+                    value={plan.features.join("\n")}
+                    onChange={(e) => handlePlanChange(index, "features", e.target.value)}
+                    placeholder="特徴"
+                    rows={5}
+                  />
+                </div>
+                <div>
+                  <label className="block mb-2">適用条件</label>
+                  <Input
+                    value={plan.limits}
+                    onChange={(e) => handlePlanChange(index, "limits", e.target.value)}
+                    placeholder="適用条件"
+                  />
+                </div>
+                <div>
+                  <label className="block mb-2">カードの色</label>
+                  <Input
+                    value={plan.color}
+                    onChange={(e) => handlePlanChange(index, "color", e.target.value)}
+                    placeholder="カードの色（Tailwind CSSクラス）"
+                  />
+                </div>
+                <div>
+                  <label className="block mb-2">ボタンの色</label>
+                  <Input
+                    value={plan.buttonColor}
+                    onChange={(e) => handlePlanChange(index, "buttonColor", e.target.value)}
+                    placeholder="ボタンの色（Tailwind CSSクラス）"
+                  />
+                </div>
+                <div>
+                  <label className="block mb-2">リボンの色</label>
+                  <Input
+                    value={plan.ribbonColor}
+                    onChange={(e) => handlePlanChange(index, "ribbonColor", e.target.value)}
+                    placeholder="リボンの色（Tailwind CSSクラス）"
+                  />
                 </div>
               </CardContent>
             </Card>

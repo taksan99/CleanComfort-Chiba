@@ -58,24 +58,10 @@ export default function PricingOverviewEditor() {
   const [pricingData, setPricingData] = useState<PricingCategory[]>(initialPricingData)
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch("/api/site-content?section=pricingOverview")
-        const data = await response.json()
-        if (data && Array.isArray(data)) {
-          setPricingData(data)
-        }
-      } catch (error) {
-        console.error("Error fetching pricing data:", error)
-        // Fallback to localStorage
-        const savedPricingData = localStorage.getItem("pricingOverviewContent")
-        if (savedPricingData) {
-          setPricingData(JSON.parse(savedPricingData))
-        }
-      }
+    const savedPricingData = localStorage.getItem("pricingOverviewContent")
+    if (savedPricingData) {
+      setPricingData(JSON.parse(savedPricingData))
     }
-
-    fetchData()
   }, [])
 
   const handleCategoryChange = (index: number, field: keyof PricingCategory, value: string) => {
@@ -105,29 +91,9 @@ export default function PricingOverviewEditor() {
     setPricingData(newPricingData)
   }
 
-  const handleSave = async () => {
-    try {
-      const response = await fetch("/api/site-content", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          section: "pricingOverview",
-          content: pricingData,
-        }),
-      })
-
-      if (response.ok) {
-        localStorage.setItem("pricingOverviewContent", JSON.stringify(pricingData))
-        alert("料金体系の内容が保存されました。")
-      } else {
-        throw new Error("Failed to save")
-      }
-    } catch (error) {
-      console.error("Error saving pricing data:", error)
-      alert("保存中にエラーが発生しました。")
-    }
+  const handleSave = () => {
+    localStorage.setItem("pricingOverviewContent", JSON.stringify(pricingData))
+    alert("料金体系の内容が保存されました。")
   }
 
   return (
