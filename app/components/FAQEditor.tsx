@@ -44,7 +44,7 @@ const initialFAQs: FAQItem[] = [
       "はい、全スタッフの身元確認を行っており、研修も徹底しています。また、貴重品等は事前にお客様ご自身で管理をお願いしております。",
   },
   {
-    question: "金体系はどうなっていますか？",
+    question: "��金体系はどうなっていますか？",
     answer:
       "各サービスには基本料金が設定されています。例えば、水回り5点セットは68,000円～、通常エアコンクリーニングは12,000円～となっています。ただし、作業の難易度や追加オプションによって料金が変動する場合があります。詳細な料金はお気軽にお問い合わせください。",
   },
@@ -79,23 +79,10 @@ export default function FAQEditor() {
   const [faqs, setFaqs] = useState<FAQItem[]>(initialFAQs)
 
   useEffect(() => {
-    const fetchFAQs = async () => {
-      try {
-        const response = await fetch("/api/content?section=faq")
-        const data = await response.json()
-        if (data && Array.isArray(data)) {
-          setFaqs(data)
-        }
-      } catch (error) {
-        console.error("Error fetching FAQs:", error)
-        const savedFAQs = localStorage.getItem("faqContent")
-        if (savedFAQs) {
-          setFaqs(JSON.parse(savedFAQs))
-        }
-      }
+    const savedFAQs = localStorage.getItem("faqContent")
+    if (savedFAQs) {
+      setFaqs(JSON.parse(savedFAQs))
     }
-
-    fetchFAQs()
   }, [])
 
   const handleChange = (index: number, field: keyof FAQItem, value: string) => {
@@ -114,30 +101,9 @@ export default function FAQEditor() {
     setFaqs(newFAQs)
   }
 
-  const handleSave = async () => {
-    try {
-      const response = await fetch("/api/content", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          section: "faq",
-          content: faqs,
-        }),
-      })
-
-      if (response.ok) {
-        localStorage.setItem("faqContent", JSON.stringify(faqs))
-        alert("よくある質問の内容が保存されました。")
-      } else {
-        throw new Error("Failed to save to database")
-      }
-    } catch (error) {
-      console.error("Error saving FAQs:", error)
-      localStorage.setItem("faqContent", JSON.stringify(faqs))
-      alert("よくある質問の内容が保存されました（ローカルのみ）。")
-    }
+  const handleSave = () => {
+    localStorage.setItem("faqContent", JSON.stringify(faqs))
+    alert("よくある質問の内容が保存されました。")
   }
 
   return (

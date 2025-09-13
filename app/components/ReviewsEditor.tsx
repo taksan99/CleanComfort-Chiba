@@ -75,23 +75,10 @@ export default function ReviewsEditor() {
   const { imageUrls, refreshImages } = useImageUrls()
 
   useEffect(() => {
-    const fetchReviews = async () => {
-      try {
-        const response = await fetch("/api/content?section=reviews")
-        const data = await response.json()
-        if (data && Array.isArray(data)) {
-          setReviews(data)
-        }
-      } catch (error) {
-        console.error("Error fetching reviews:", error)
-        const savedReviews = localStorage.getItem("reviewsContent")
-        if (savedReviews) {
-          setReviews(JSON.parse(savedReviews))
-        }
-      }
+    const savedReviews = localStorage.getItem("reviewsContent")
+    if (savedReviews) {
+      setReviews(JSON.parse(savedReviews))
     }
-
-    fetchReviews()
   }, [])
 
   const handleChange = (index: number, field: keyof Review, value: string | number) => {
@@ -110,30 +97,9 @@ export default function ReviewsEditor() {
     setReviews(newReviews)
   }
 
-  const handleSave = async () => {
-    try {
-      const response = await fetch("/api/content", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          section: "reviews",
-          content: reviews,
-        }),
-      })
-
-      if (response.ok) {
-        localStorage.setItem("reviewsContent", JSON.stringify(reviews))
-        alert("お客様の声の内容が保存されました。")
-      } else {
-        throw new Error("Failed to save to database")
-      }
-    } catch (error) {
-      console.error("Error saving reviews:", error)
-      localStorage.setItem("reviewsContent", JSON.stringify(reviews))
-      alert("お客様の声の内容が保存されました（ローカルのみ）。")
-    }
+  const handleSave = () => {
+    localStorage.setItem("reviewsContent", JSON.stringify(reviews))
+    alert("お客様の声の内容が保存されました。")
   }
 
   const handleImageUpload = async (file: File, index: number) => {

@@ -38,7 +38,7 @@ const initialPromotions: PromotionCard[] = [
   {
     id: "2",
     title: "リピーター特典",
-    description: "年2回以上ご利用いただくと、2回目以降のご利用時",
+    description: "年2回以上ご利用いただくと、2回目以降のご利用時��",
     discount: "5% OFF",
     startDate: "2023-01-01",
     endDate: "2025-12-31",
@@ -52,29 +52,15 @@ export default function PromotionsEditor() {
   const [campaignText, setCampaignText] = useState("最大50%OFF！　春のお掃除キャンペーン実施中！")
 
   useEffect(() => {
-    const fetchPromotions = async () => {
-      try {
-        const response = await fetch("/api/content?section=promotions")
-        const data = await response.json()
-        if (data && data.promotions && data.campaignText) {
-          setPromotions(data.promotions)
-          setCampaignText(data.campaignText)
-        }
-      } catch (error) {
-        console.error("Error fetching promotions:", error)
-        const savedPromotions = localStorage.getItem("promotionsContent")
-        if (savedPromotions) {
-          setPromotions(JSON.parse(savedPromotions))
-        }
-
-        const savedCampaignText = localStorage.getItem("promotionsCampaignText")
-        if (savedCampaignText) {
-          setCampaignText(savedCampaignText)
-        }
-      }
+    const savedPromotions = localStorage.getItem("promotionsContent")
+    if (savedPromotions) {
+      setPromotions(JSON.parse(savedPromotions))
     }
 
-    fetchPromotions()
+    const savedCampaignText = localStorage.getItem("promotionsCampaignText")
+    if (savedCampaignText) {
+      setCampaignText(savedCampaignText)
+    }
   }, [])
 
   const handlePromotionChange = (index: number, field: keyof PromotionCard, value: string | boolean) => {
@@ -103,35 +89,10 @@ export default function PromotionsEditor() {
     setPromotions(newPromotions)
   }
 
-  const handleSave = async () => {
-    try {
-      const response = await fetch("/api/content", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          section: "promotions",
-          content: {
-            promotions: promotions,
-            campaignText: campaignText,
-          },
-        }),
-      })
-
-      if (response.ok) {
-        localStorage.setItem("promotionsContent", JSON.stringify(promotions))
-        localStorage.setItem("promotionsCampaignText", campaignText)
-        alert("お得な特典の内容が保存されました。")
-      } else {
-        throw new Error("Failed to save to database")
-      }
-    } catch (error) {
-      console.error("Error saving promotions:", error)
-      localStorage.setItem("promotionsContent", JSON.stringify(promotions))
-      localStorage.setItem("promotionsCampaignText", campaignText)
-      alert("お得な特典の内容が保存されました（ローカルのみ）。")
-    }
+  const handleSave = () => {
+    localStorage.setItem("promotionsContent", JSON.stringify(promotions))
+    localStorage.setItem("promotionsCampaignText", campaignText)
+    alert("お得な特典の内容が保存されました。")
   }
 
   return (

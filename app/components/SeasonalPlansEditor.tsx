@@ -40,23 +40,10 @@ export default function SeasonalPlansEditor() {
   const [seasonalPlans, setSeasonalPlans] = useState<SeasonalPlan[]>(initialSeasonalPlans)
 
   useEffect(() => {
-    const fetchSeasonalPlans = async () => {
-      try {
-        const response = await fetch("/api/content?section=seasonalPlans")
-        const data = await response.json()
-        if (data && Array.isArray(data)) {
-          setSeasonalPlans(data)
-        }
-      } catch (error) {
-        console.error("Error fetching seasonal plans:", error)
-        const savedSeasonalPlans = localStorage.getItem("seasonalPlansContent")
-        if (savedSeasonalPlans) {
-          setSeasonalPlans(JSON.parse(savedSeasonalPlans))
-        }
-      }
+    const savedSeasonalPlans = localStorage.getItem("seasonalPlansContent")
+    if (savedSeasonalPlans) {
+      setSeasonalPlans(JSON.parse(savedSeasonalPlans))
     }
-
-    fetchSeasonalPlans()
   }, [])
 
   const handleChange = (index: number, field: keyof SeasonalPlan, value: string) => {
@@ -65,30 +52,9 @@ export default function SeasonalPlansEditor() {
     setSeasonalPlans(newSeasonalPlans)
   }
 
-  const handleSave = async () => {
-    try {
-      const response = await fetch("/api/content", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          section: "seasonalPlans",
-          content: seasonalPlans,
-        }),
-      })
-
-      if (response.ok) {
-        localStorage.setItem("seasonalPlansContent", JSON.stringify(seasonalPlans))
-        alert("季節別おすすめプランの内容が保存されました。")
-      } else {
-        throw new Error("Failed to save to database")
-      }
-    } catch (error) {
-      console.error("Error saving seasonal plans:", error)
-      localStorage.setItem("seasonalPlansContent", JSON.stringify(seasonalPlans))
-      alert("季節別おすすめプランの内容が保存されました（ローカルのみ）。")
-    }
+  const handleSave = () => {
+    localStorage.setItem("seasonalPlansContent", JSON.stringify(seasonalPlans))
+    alert("季節別おすすめプランの内容が保存されました。")
   }
 
   return (

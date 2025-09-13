@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useToast } from "@/components/ui/use-toast"
 
 interface ValueProp {
   title: string
@@ -43,26 +44,36 @@ const initialValueProps: ValueProp[] = [
 
 export default function ValuePropositionEditor() {
   const [valueProps, setValueProps] = useState<ValueProp[]>(initialValueProps)
+  const [isLoading, setIsLoading] = useState(false)
+  const { toast } = useToast()
 
   useEffect(() => {
-    const fetchValueProps = async () => {
+    const fetchValuePropositions = async () => {
       try {
-        const response = await fetch("/api/content?section=valueProposition")
+        const response = await fetch("/api/update-content?type=valuePropositions")
         const data = await response.json()
-        if (data && Array.isArray(data)) {
-          setValueProps(data)
+        if (data.success && data.data.length > 0) {
+          setValueProps(
+            data.data.map((item: any) => ({
+              title: item.title,
+              description: item.description,
+              example: item.example,
+              benefit: item.benefit,
+            })),
+          )
         }
       } catch (error) {
         console.error("Error fetching value propositions:", error)
-        const savedValueProps = localStorage.getItem("valuePropositionContent")
-        if (savedValueProps) {
-          setValueProps(JSON.parse(savedValueProps))
-        }
+        toast({
+          title: "エラー",
+          description: "4つの幸せな暮らしの内容の読み込みに失敗しました。",
+          variant: "destructive",
+        })
       }
     }
 
-    fetchValueProps()
-  }, [])
+    fetchValuePropositions()
+  }, [toast])
 
   const handleChange = (index: number, field: keyof ValueProp, value: string) => {
     const newValueProps = [...valueProps]
@@ -71,28 +82,37 @@ export default function ValuePropositionEditor() {
   }
 
   const handleSave = async () => {
+    setIsLoading(true)
     try {
-      const response = await fetch("/api/content", {
+      const response = await fetch("/api/update-content", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          section: "valueProposition",
-          content: valueProps,
+          type: "valuePropositions",
+          data: valueProps,
         }),
       })
 
-      if (response.ok) {
-        localStorage.setItem("valuePropositionContent", JSON.stringify(valueProps))
-        alert("4つの幸せな暮らしの内容が保存されました。")
+      const result = await response.json()
+      if (result.success) {
+        toast({
+          title: "保存完了",
+          description: "4つの幸せな暮らしの内容が正常に保存されました。",
+        })
       } else {
-        throw new Error("Failed to save to database")
+        throw new Error(result.error || "Save failed")
       }
     } catch (error) {
       console.error("Error saving value propositions:", error)
-      localStorage.setItem("valuePropositionContent", JSON.stringify(valueProps))
-      alert("4つの幸せな暮らしの内容が保存されました（ローカルのみ）。")
+      toast({
+        title: "エラー",
+        description: "4つの幸せな暮らしの内容の保存に失敗しました。",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -102,7 +122,7 @@ export default function ValuePropositionEditor() {
         <TabsList>
           {valueProps.map((_, index) => (
             <TabsTrigger key={index} value={`prop${index}`}>
-              {initialValueProps[index].title}
+              {initialValueProps[index]?.title || `項目 ${index + 1}`}
             </TabsTrigger>
           ))}
         </TabsList>
@@ -110,7 +130,7 @@ export default function ValuePropositionEditor() {
           <TabsContent key={index} value={`prop${index}`}>
             <Card>
               <CardHeader>
-                <CardTitle>{initialValueProps[index].title}</CardTitle>
+                <CardTitle>{prop.title || `項目 ${index + 1}`}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
@@ -153,7 +173,9 @@ export default function ValuePropositionEditor() {
           </TabsContent>
         ))}
       </Tabs>
-      <Button onClick={handleSave}>保存</Button>
+      <Button onClick={handleSave} disabled={isLoading}>
+        {isLoading ? "保存中..." : "保存"}
+      </Button>
     </div>
   )
 }
