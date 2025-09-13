@@ -7,22 +7,29 @@ export async function GET(request: Request) {
     const section = searchParams.get("section")
 
     if (section) {
+      // 特定のセクションのデータを取得
       const result = await sql`
         SELECT content FROM site_content 
         WHERE section = ${section}
-        ORDER BY updated_at DESC
+        ORDER BY updated_at DESC 
         LIMIT 1
       `
       return NextResponse.json(result.rows[0]?.content || null)
     } else {
+      // すべてのセクションのデータを取得
       const result = await sql`
         SELECT section, content FROM site_content
-        ORDER BY updated_at DESC
+        ORDER BY section, updated_at DESC
       `
-      const contentMap = result.rows.reduce((acc, row) => {
-        acc[row.section] = row.content
-        return acc
-      }, {})
+
+      // セクションごとに最新のデータのみを返す
+      const contentMap: { [key: string]: any } = {}
+      result.rows.forEach((row) => {
+        if (!contentMap[row.section]) {
+          contentMap[row.section] = row.content
+        }
+      })
+
       return NextResponse.json(contentMap)
     }
   } catch (error) {
@@ -39,12 +46,26 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Section and content are required" }, { status: 400 })
     }
 
-    await sql`
-      INSERT INTO site_content (section, content, created_at, updated_at)
-      VALUES (${section}, ${JSON.stringify(content)}, NOW(), NOW())
-      ON CONFLICT (section) DO UPDATE
-      SET content = ${JSON.stringify(content)}, updated_at = NOW()
+    // 既存のレコードがあるかチェック
+    const existingResult = await sql`
+      SELECT id FROM site_content 
+      WHERE section = ${section}
     `
+
+    if (existingResult.rows.length > 0) {
+      // 更新
+      await sql`
+        UPDATE site_content 
+        SET content = ${JSON.stringify(content)}, updated_at = CURRENT_TIMESTAMP
+        WHERE section = ${section}
+      `
+    } else {
+      // 新規作成
+      await sql`
+        INSERT INTO site_content (section, content)
+        VALUES (${section}, ${JSON.stringify(content)})
+      `
+    }
 
     return NextResponse.json({ success: true })
   } catch (error) {

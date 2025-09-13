@@ -1,12 +1,10 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Check, Star } from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Check } from "lucide-react"
 import AnimatedSection from "./AnimatedSection"
 import { useImageUrls } from "@/app/hooks/useImageUrls"
-import ErrorMessage from "./ErrorMessage"
 
 interface SubscriptionPlan {
   name: string
@@ -19,7 +17,7 @@ interface SubscriptionPlan {
   ribbonColor: string
 }
 
-const defaultPlans: SubscriptionPlan[] = [
+const initialPlans: SubscriptionPlan[] = [
   {
     name: "ベーシック",
     price: "9,800",
@@ -73,102 +71,102 @@ const defaultPlans: SubscriptionPlan[] = [
   },
 ]
 
-const PlanRibbon = ({ plan }: { plan: SubscriptionPlan }) => (
-  <div className="absolute top-0 right-0 w-0 h-0 border-l-[50px] border-b-[50px] border-l-transparent border-b-red-500">
-    <div className="absolute -top-[35px] -right-[35px] text-white text-xs font-bold transform rotate-45">
-      {plan.name === "スタンダード" ? "人気" : plan.name === "プレミアム" ? "おすすめ" : ""}
+const PlanRibbon = ({ color }: { color: string }) => (
+  <>
+    <div className={`absolute top-0 right-0 w-16 h-16 overflow-hidden`}>
+      <div
+        className={`absolute top-0 right-0 transform translate-x-1/2 -translate-y-1/2 rotate-45 w-32 h-8 bg-gradient-to-r ${color}`}
+      ></div>
     </div>
-  </div>
+    <div className={`absolute bottom-0 left-0 w-16 h-16 overflow-hidden`}>
+      <div
+        className={`absolute bottom-0 left-0 transform -translate-x-1/2 translate-y-1/2 rotate-45 w-32 h-8 bg-gradient-to-r ${color}`}
+      ></div>
+    </div>
+  </>
 )
 
 export default function Subscription() {
-  const [plans, setPlans] = useState<SubscriptionPlan[]>(defaultPlans)
+  const [plans, setPlans] = useState<SubscriptionPlan[]>(initialPlans)
   const { imageUrls, isLoading, error } = useImageUrls()
 
   useEffect(() => {
-    fetchContent()
+    const savedPlans = localStorage.getItem("subscriptionPlans")
+    if (savedPlans) {
+      setPlans(JSON.parse(savedPlans))
+    }
   }, [])
 
-  const fetchContent = async () => {
-    try {
-      const response = await fetch("/api/content?section=subscriptionPlans")
-      const content = await response.json()
-      if (content && Array.isArray(content)) {
-        setPlans(content)
-      }
-    } catch (error) {
-      console.error("Error fetching subscription plans:", error)
-    }
-  }
-
   if (isLoading) {
-    return <div>Loading...</div>
+    return <div className="text-center py-16">Loading...</div>
   }
 
   if (error) {
-    return <ErrorMessage message={error.message} />
+    console.error("Error loading image:", error)
+    // エラーが発生した場合でもコンポーネントを表示
   }
 
   const backgroundImage = imageUrls.subscriptionBackgroundImage?.url || "/placeholder.svg"
 
   return (
-    <section
-      className="relative bg-cover bg-center bg-no-repeat py-16"
-      style={{
-        backgroundImage: `url(${backgroundImage})`,
-        backgroundAttachment: "fixed",
-      }}
-    >
-      <div className="absolute inset-0 bg-black opacity-20"></div>
+    <section className="py-16 bg-cover bg-center relative" style={{ backgroundImage: `url(${backgroundImage})` }}>
       <div className="container mx-auto px-4">
-        <h2 className="text-3xl font-bold text-center mb-12 text-gray-800 bg-white bg-opacity-75 p-4 rounded-lg shadow-lg">
-          サブスクリプションプラン
+        <h2 className="text-3xl font-bold text-center mb-6 text-gray-800 bg-white bg-opacity-75 p-4 rounded-lg shadow-lg">
+          サブスクリプションサービス
         </h2>
+        <div className="text-center mb-12">
+          <p className="text-gray-600 bg-white bg-opacity-75 p-2 rounded-lg inline-block mx-auto">
+            定期的なお掃除と家事代行で、いつでも快適な暮らしを
+          </p>
+        </div>
         <AnimatedSection>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {plans.map((plan, index) => (
-              <Card
-                key={index}
-                className={`${plan.color} hover:shadow-xl transition-shadow duration-300 relative overflow-hidden bg-opacity-90`}
-              >
-                {(plan.name === "スタンダード" || plan.name === "プレミアム") && <PlanRibbon plan={plan} />}
-                <CardHeader>
-                  <CardTitle className="text-center text-2xl" style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)" }}>
-                    {plan.name}
-                  </CardTitle>
-                  <div className="text-center">
-                    <span className="text-4xl font-bold" style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)" }}>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+            {plans.map((plan) => (
+              <div key={plan.name} className="transform hover:scale-105 transition-transform duration-300">
+                <Card
+                  className={`${plan.color} overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 relative p-4 bg-opacity-90`}
+                >
+                  <PlanRibbon color={plan.ribbonColor} />
+                  <CardHeader>
+                    <CardTitle style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)" }}>{plan.name}</CardTitle>
+                    <CardDescription style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)" }}>
+                      {plan.description}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex-grow">
+                    <p
+                      className="text-4xl font-bold mb-4 text-gray-800"
+                      style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)" }}
+                    >
                       ¥{plan.price}
-                    </span>
-                    <span className="text-lg text-gray-600">/月</span>
-                  </div>
-                  <p className="text-center text-gray-600" style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)" }}>
-                    {plan.description}
-                  </p>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-2 mb-6">
-                    {plan.features.map((feature, featureIndex) => (
-                      <li key={featureIndex} className="flex items-center">
-                        <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
-                        <span className="text-sm" style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)" }}>
-                          {feature}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                  <p className="text-xs text-gray-500 mb-4" style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)" }}>
-                    {plan.limits}
-                  </p>
-                  <Button className={`w-full ${plan.buttonColor} text-white`}>
-                    {plan.name === "プレミアム" && <Star className="h-4 w-4 mr-2" />}
-                    プランを選択
-                  </Button>
-                </CardContent>
-              </Card>
+                      <span className="text-base font-normal">/月</span>
+                    </p>
+                    <ul className="space-y-2">
+                      {plan.features.map((feature, index) => (
+                        <li key={index} className="flex items-center">
+                          <Check className="h-5 w-5 text-green-500 mr-2" />
+                          <span style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)" }}>{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="mt-4 text-sm text-gray-600">
+                      <p style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)" }}>
+                        <strong>適用条件:</strong> {plan.limits}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             ))}
           </div>
         </AnimatedSection>
+        <div className="text-center mt-8">
+          <p className="text-sm text-gray-800 bg-white bg-opacity-75 p-2 rounded-lg inline-block mx-auto">
+            ※ サービス内容や頻度は、お客様のご要望に応じてカスタマイズ可能です。詳細はお問い合わせください。
+            エアコンクリーニング、ハウスクリーニング、便利屋サービスのいずれかを1回以上ご利用後、
+            またはサブスクリプション開始前の現地調査後にご利用いただけます。
+          </p>
+        </div>
       </div>
     </section>
   )

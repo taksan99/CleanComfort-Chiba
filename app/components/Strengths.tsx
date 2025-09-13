@@ -10,54 +10,52 @@ import ErrorMessage from "./ErrorMessage"
 interface Strength {
   title: string
   description: string
+  icon: any
+  color: string
+  iconColor: string
 }
 
-const defaultStrengths: Strength[] = [
+const strengths = [
   {
     title: "翌日対応、365日対応",
     description: "お急ぎの方も安心。年中無休でサービスを提供しています。",
+    icon: Clock,
+    color: "bg-blue-100 hover:bg-blue-200",
+    iconColor: "text-blue-600",
   },
   {
     title: "経験豊富なプロのスタッフ",
     description: "熟練のスタッフが丁寧に作業いたします。",
+    icon: UserCheck,
+    color: "bg-green-100 hover:bg-green-200",
+    iconColor: "text-green-600",
   },
   {
     title: "エコフレンドリーな洗剤使用",
     description: "環境と健康に配慮した安全な洗剤を使用しています。",
+    icon: Leaf,
+    color: "bg-yellow-100 hover:bg-yellow-200",
+    iconColor: "text-yellow-600",
   },
   {
     title: "地域密着で安心",
     description: "千葉県の地域事情を熟知したスタッフが対応します。",
+    icon: Home,
+    color: "bg-purple-100 hover:bg-purple-200",
+    iconColor: "text-purple-600",
   },
 ]
 
-const icons = [Clock, UserCheck, Leaf, Home]
-const colors = [
-  { bg: "bg-blue-100 hover:bg-blue-200", icon: "text-blue-600" },
-  { bg: "bg-green-100 hover:bg-green-200", icon: "text-green-600" },
-  { bg: "bg-yellow-100 hover:bg-yellow-200", icon: "text-yellow-600" },
-  { bg: "bg-purple-100 hover:bg-purple-200", icon: "text-purple-600" },
-]
-
 export default function Strengths() {
-  const [strengths, setStrengths] = useState<Strength[]>(defaultStrengths)
+  const [localStrengths, setLocalStrengths] = useState<Strength[]>(strengths)
   const { imageUrls, isLoading, error } = useImageUrls()
 
   useEffect(() => {
-    fetchContent()
-  }, [])
-
-  const fetchContent = async () => {
-    try {
-      const response = await fetch("/api/content?section=strengths")
-      const content = await response.json()
-      if (content && Array.isArray(content)) {
-        setStrengths(content)
-      }
-    } catch (error) {
-      console.error("Error fetching strengths:", error)
+    const savedStrengths = localStorage.getItem("strengthsContent")
+    if (savedStrengths) {
+      setLocalStrengths(JSON.parse(savedStrengths))
     }
-  }
+  }, [])
 
   if (isLoading) {
     return <div>Loading...</div>
@@ -84,27 +82,26 @@ export default function Strengths() {
         </h2>
         <AnimatedSection>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {strengths.map((strength, index) => {
-              const Icon = icons[index] || Clock
-              const color = colors[index] || colors[0]
-              return (
-                <Card key={index} className={`${color.bg} hover:shadow-lg transition-all duration-300 bg-opacity-90`}>
-                  <CardHeader>
-                    <div className="flex justify-center mb-4">
-                      <Icon className={`h-12 w-12 ${color.icon}`} />
-                    </div>
-                    <CardTitle className="text-center" style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)" }}>
-                      {strength.title}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-center text-gray-600" style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)" }}>
-                      {strength.description}
-                    </p>
-                  </CardContent>
-                </Card>
-              )
-            })}
+            {strengths.map((strength, index) => (
+              <Card
+                key={index}
+                className={`${strength.color} hover:shadow-lg transition-all duration-300 bg-opacity-90`}
+              >
+                <CardHeader>
+                  <div className="flex justify-center mb-4">
+                    <strength.icon className={`h-12 w-12 ${strength.iconColor}`} />
+                  </div>
+                  <CardTitle className="text-center" style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)" }}>
+                    {strength.title}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-center text-gray-600" style={{ textShadow: "1px 1px 2px rgba(0, 0, 0, 0.1)" }}>
+                    {strength.description}
+                  </p>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </AnimatedSection>
       </div>

@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useToast } from "@/components/ui/use-toast"
 
 interface ValueProp {
   title: string
@@ -44,24 +43,26 @@ const initialValueProps: ValueProp[] = [
 
 export default function ValuePropositionEditor() {
   const [valueProps, setValueProps] = useState<ValueProp[]>(initialValueProps)
-  const [isLoading, setIsLoading] = useState(false)
-  const { toast } = useToast()
 
   useEffect(() => {
+    const fetchValueProps = async () => {
+      try {
+        const response = await fetch("/api/content?section=valueProposition")
+        const data = await response.json()
+        if (data && Array.isArray(data)) {
+          setValueProps(data)
+        }
+      } catch (error) {
+        console.error("Error fetching value propositions:", error)
+        const savedValueProps = localStorage.getItem("valuePropositionContent")
+        if (savedValueProps) {
+          setValueProps(JSON.parse(savedValueProps))
+        }
+      }
+    }
+
     fetchValueProps()
   }, [])
-
-  const fetchValueProps = async () => {
-    try {
-      const response = await fetch("/api/content?section=valueProposition")
-      const data = await response.json()
-      if (data && Array.isArray(data)) {
-        setValueProps(data)
-      }
-    } catch (error) {
-      console.error("Error fetching value propositions:", error)
-    }
-  }
 
   const handleChange = (index: number, field: keyof ValueProp, value: string) => {
     const newValueProps = [...valueProps]
@@ -70,7 +71,6 @@ export default function ValuePropositionEditor() {
   }
 
   const handleSave = async () => {
-    setIsLoading(true)
     try {
       const response = await fetch("/api/content", {
         method: "POST",
@@ -84,22 +84,15 @@ export default function ValuePropositionEditor() {
       })
 
       if (response.ok) {
-        toast({
-          title: "保存完了",
-          description: "4つの幸せな暮らしの内容が正常に保存されました。",
-        })
+        localStorage.setItem("valuePropositionContent", JSON.stringify(valueProps))
+        alert("4つの幸せな暮らしの内容が保存されました。")
       } else {
-        throw new Error("Failed to save")
+        throw new Error("Failed to save to database")
       }
     } catch (error) {
       console.error("Error saving value propositions:", error)
-      toast({
-        title: "エラー",
-        description: "保存に失敗しました。",
-        variant: "destructive",
-      })
-    } finally {
-      setIsLoading(false)
+      localStorage.setItem("valuePropositionContent", JSON.stringify(valueProps))
+      alert("4つの幸せな暮らしの内容が保存されました（ローカルのみ）。")
     }
   }
 
@@ -160,9 +153,7 @@ export default function ValuePropositionEditor() {
           </TabsContent>
         ))}
       </Tabs>
-      <Button onClick={handleSave} disabled={isLoading}>
-        {isLoading ? "保存中..." : "保存"}
-      </Button>
+      <Button onClick={handleSave}>保存</Button>
     </div>
   )
 }

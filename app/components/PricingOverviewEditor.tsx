@@ -3,57 +3,108 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { useToast } from "@/components/ui/use-toast"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Plus, Trash2 } from "lucide-react"
+import type { PricingCategory } from "./PricingOverview"
 
-interface PricingOverview {
-  title: string
-  description: string
-  features: string[]
-  note: string
-}
-
-const initialPricing: PricingOverview = {
-  title: "明確で安心な料金体系",
-  description: "お客様に安心してご利用いただけるよう、明確な料金設定を心がけています。",
-  features: [
-    "事前見積もり無料",
-    "追加料金は事前にご相談",
-    "作業内容に応じた適正価格",
-    "各種割引制度あり",
-    "支払い方法は現金・クレジットカード・銀行振込に対応",
-  ],
-  note: "料金は作業内容・お部屋の状況により変動する場合があります。詳細はお気軽にお問い合わせください。",
-}
+const initialPricingData: PricingCategory[] = [
+  {
+    category: "掃除サービス",
+    icon: "Droplet",
+    color: "from-blue-500 to-cyan-400",
+    textColor: "text-blue-700",
+    borderColor: "border-blue-500",
+    items: [
+      { service: "水回り5点セット（浴室/キッチン/レンジフード/トイレ/洗面台）", price: "68,000円～" },
+      { service: "浴室、キッチン、レンジフード", price: "20,000円～" },
+      { service: "トイレ", price: "10,000円～" },
+      { service: "ガラス・サッシクリーニング（3枚）", price: "10,000円～" },
+      { service: "ベランダ", price: "6,000円～" },
+    ],
+  },
+  {
+    category: "エアコン掃除",
+    icon: "Wind",
+    color: "from-green-500 to-emerald-400",
+    textColor: "text-green-700",
+    borderColor: "border-green-500",
+    items: [
+      { service: "通常エアコンクリーニング", price: "12,000円～" },
+      { service: "お掃除機能付きエアコン", price: "22,000円～" },
+      { service: "ご家庭用埋込式エアコン", price: "25,000円～" },
+      { service: "業務用4方向エアコン", price: "33,000円～" },
+      { service: "室外機", price: "6,000円～" },
+    ],
+  },
+  {
+    category: "便利屋さんサービス",
+    icon: "Wrench",
+    color: "from-yellow-500 to-amber-400",
+    textColor: "text-yellow-700",
+    borderColor: "border-yellow-500",
+    items: [
+      { service: "害獣・害虫駆除", price: "10,000円～" },
+      { service: "墓参り代行", price: "10,000円～" },
+      { service: "ペットの世話（1回）", price: "3,000円～" },
+      { service: "友達代行（1時間）", price: "5,000円～" },
+      { service: "庭の手入れ", price: "8,000円～" },
+      { service: "その他、どんなことでも！", price: "要相談" },
+    ],
+  },
+]
 
 export default function PricingOverviewEditor() {
-  const [pricing, setPricing] = useState<PricingOverview>(initialPricing)
-  const [isLoading, setIsLoading] = useState(false)
-  const { toast } = useToast()
+  const [pricingData, setPricingData] = useState<PricingCategory[]>(initialPricingData)
 
   useEffect(() => {
-    fetchPricing()
+    const fetchPricingData = async () => {
+      try {
+        const response = await fetch("/api/content?section=pricingOverview")
+        const data = await response.json()
+        if (data && Array.isArray(data)) {
+          setPricingData(data)
+        }
+      } catch (error) {
+        console.error("Error fetching pricing data:", error)
+        const savedPricingData = localStorage.getItem("pricingOverviewContent")
+        if (savedPricingData) {
+          setPricingData(JSON.parse(savedPricingData))
+        }
+      }
+    }
+
+    fetchPricingData()
   }, [])
 
-  const fetchPricing = async () => {
-    try {
-      const response = await fetch("/api/content?section=pricingOverview")
-      const data = await response.json()
-      if (data) {
-        setPricing(data)
-      }
-    } catch (error) {
-      console.error("Error fetching pricing overview:", error)
-    }
+  const handleCategoryChange = (index: number, field: keyof PricingCategory, value: string) => {
+    const newPricingData = [...pricingData]
+    newPricingData[index] = { ...newPricingData[index], [field]: value }
+    setPricingData(newPricingData)
   }
 
-  const handleChange = (field: keyof PricingOverview, value: string | string[]) => {
-    setPricing({ ...pricing, [field]: value })
+  const handleItemChange = (categoryIndex: number, itemIndex: number, field: "service" | "price", value: string) => {
+    const newPricingData = [...pricingData]
+    newPricingData[categoryIndex].items[itemIndex] = {
+      ...newPricingData[categoryIndex].items[itemIndex],
+      [field]: value,
+    }
+    setPricingData(newPricingData)
+  }
+
+  const handleAddItem = (categoryIndex: number) => {
+    const newPricingData = [...pricingData]
+    newPricingData[categoryIndex].items.push({ service: "", price: "" })
+    setPricingData(newPricingData)
+  }
+
+  const handleRemoveItem = (categoryIndex: number, itemIndex: number) => {
+    const newPricingData = [...pricingData]
+    newPricingData[categoryIndex].items.splice(itemIndex, 1)
+    setPricingData(newPricingData)
   }
 
   const handleSave = async () => {
-    setIsLoading(true)
     try {
       const response = await fetch("/api/content", {
         method: "POST",
@@ -62,77 +113,82 @@ export default function PricingOverviewEditor() {
         },
         body: JSON.stringify({
           section: "pricingOverview",
-          content: pricing,
+          content: pricingData,
         }),
       })
 
       if (response.ok) {
-        toast({
-          title: "保存完了",
-          description: "料金体系の内容が正常に保存されました。",
-        })
+        localStorage.setItem("pricingOverviewContent", JSON.stringify(pricingData))
+        alert("料金体系の内容が保存されました。")
       } else {
-        throw new Error("Failed to save")
+        throw new Error("Failed to save to database")
       }
     } catch (error) {
-      console.error("Error saving pricing overview:", error)
-      toast({
-        title: "エラー",
-        description: "保存に失敗しました。",
-        variant: "destructive",
-      })
-    } finally {
-      setIsLoading(false)
+      console.error("Error saving pricing data:", error)
+      localStorage.setItem("pricingOverviewContent", JSON.stringify(pricingData))
+      alert("料金体系の内容が保存されました（ローカルのみ）。")
     }
   }
 
   return (
     <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>料金体系</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <label className="block mb-2">タイトル</label>
-            <Input
-              value={pricing.title}
-              onChange={(e) => handleChange("title", e.target.value)}
-              placeholder="タイトル"
-            />
-          </div>
-          <div>
-            <label className="block mb-2">説明</label>
-            <Textarea
-              value={pricing.description}
-              onChange={(e) => handleChange("description", e.target.value)}
-              placeholder="説明"
-              rows={3}
-            />
-          </div>
-          <div>
-            <label className="block mb-2">特徴（各項目を改行で区切ってください）</label>
-            <Textarea
-              value={pricing.features.join("\n")}
-              onChange={(e) => handleChange("features", e.target.value.split("\n").filter(Boolean))}
-              placeholder="特徴"
-              rows={6}
-            />
-          </div>
-          <div>
-            <label className="block mb-2">注意事項・備考</label>
-            <Textarea
-              value={pricing.note}
-              onChange={(e) => handleChange("note", e.target.value)}
-              placeholder="注意事項や備考"
-              rows={3}
-            />
-          </div>
-        </CardContent>
-      </Card>
-      <Button onClick={handleSave} disabled={isLoading}>
-        {isLoading ? "保存中..." : "保存"}
-      </Button>
+      <Tabs defaultValue="category0">
+        <TabsList>
+          {pricingData.map((category, index) => (
+            <TabsTrigger key={index} value={`category${index}`}>
+              {category.category}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+        {pricingData.map((category, categoryIndex) => (
+          <TabsContent key={categoryIndex} value={`category${categoryIndex}`}>
+            <Card>
+              <CardHeader>
+                <CardTitle>{category.category}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <label className="block mb-2">カテゴリー名</label>
+                  <Input
+                    value={category.category}
+                    onChange={(e) => handleCategoryChange(categoryIndex, "category", e.target.value)}
+                    placeholder="カテゴリー名"
+                  />
+                </div>
+                <div>
+                  <label className="block mb-2">サービス項目</label>
+                  {category.items.map((item, itemIndex) => (
+                    <div key={itemIndex} className="flex space-x-2 mb-2">
+                      <Input
+                        value={item.service}
+                        onChange={(e) => handleItemChange(categoryIndex, itemIndex, "service", e.target.value)}
+                        placeholder="サービス名"
+                      />
+                      <Input
+                        value={item.price}
+                        onChange={(e) => handleItemChange(categoryIndex, itemIndex, "price", e.target.value)}
+                        placeholder="価格"
+                      />
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        onClick={() => handleRemoveItem(categoryIndex, itemIndex)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                  <Button variant="outline" onClick={() => handleAddItem(categoryIndex)} className="mt-2">
+                    <Plus className="h-4 w-4 mr-2" />
+                    項目を追加
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        ))}
+      </Tabs>
+      <Button onClick={handleSave}>保存</Button>
     </div>
   )
 }

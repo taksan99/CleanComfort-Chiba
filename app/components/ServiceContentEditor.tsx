@@ -8,7 +8,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Plus, Trash2, HelpCircle } from "lucide-react"
-import { useToast } from "@/components/ui/use-toast"
 import * as LucideIcons from "lucide-react"
 
 interface ServiceContent {
@@ -49,24 +48,28 @@ const iconMap: { [key: string]: keyof typeof LucideIcons } = {
 
 export default function ServiceContentEditor({ initialServices }: ServiceContentEditorProps) {
   const [services, setServices] = useState<ServiceContent[]>(initialServices)
-  const [isLoading, setIsLoading] = useState(false)
-  const { toast } = useToast()
 
   useEffect(() => {
+    // データベースからサービス内容を取得
+    const fetchServices = async () => {
+      try {
+        const response = await fetch("/api/content?section=services")
+        const data = await response.json()
+        if (data && Array.isArray(data)) {
+          setServices(data)
+        }
+      } catch (error) {
+        console.error("Error fetching services:", error)
+        // エラーの場合はlocalStorageから読み込み
+        const savedServices = localStorage.getItem("serviceContent")
+        if (savedServices) {
+          setServices(JSON.parse(savedServices))
+        }
+      }
+    }
+
     fetchServices()
   }, [])
-
-  const fetchServices = async () => {
-    try {
-      const response = await fetch("/api/content?section=services")
-      const data = await response.json()
-      if (data && Array.isArray(data)) {
-        setServices(data)
-      }
-    } catch (error) {
-      console.error("Error fetching services:", error)
-    }
-  }
 
   const handleServiceChange = (index: number, field: keyof ServiceContent, value: any) => {
     const newServices = [...services]
@@ -98,8 +101,8 @@ export default function ServiceContentEditor({ initialServices }: ServiceContent
   }
 
   const handleSave = async () => {
-    setIsLoading(true)
     try {
+      // データベースに保存
       const response = await fetch("/api/content", {
         method: "POST",
         headers: {
@@ -112,22 +115,17 @@ export default function ServiceContentEditor({ initialServices }: ServiceContent
       })
 
       if (response.ok) {
-        toast({
-          title: "保存完了",
-          description: "サービス内容が正常に保存されました。",
-        })
+        // バックアップとしてlocalStorageにも保存
+        localStorage.setItem("serviceContent", JSON.stringify(services))
+        alert("サービス内容が保存されました。")
       } else {
-        throw new Error("Failed to save")
+        throw new Error("Failed to save to database")
       }
     } catch (error) {
       console.error("Error saving services:", error)
-      toast({
-        title: "エラー",
-        description: "保存に失敗しました。",
-        variant: "destructive",
-      })
-    } finally {
-      setIsLoading(false)
+      // エラーの場合はlocalStorageのみに保存
+      localStorage.setItem("serviceContent", JSON.stringify(services))
+      alert("サービス内容が保存されました（ローカルのみ）。")
     }
   }
 
@@ -233,9 +231,7 @@ export default function ServiceContentEditor({ initialServices }: ServiceContent
           </TabsContent>
         ))}
       </Tabs>
-      <Button onClick={handleSave} disabled={isLoading}>
-        {isLoading ? "保存中..." : "保存"}
-      </Button>
+      <Button onClick={handleSave}>保存</Button>
     </div>
   )
 }
