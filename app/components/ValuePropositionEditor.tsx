@@ -5,211 +5,172 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Plus, Trash2 } from "lucide-react"
-import { useToast } from "@/components/ui/use-toast"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
-interface ValuePropositionItem {
+interface ValueProp {
   title: string
   description: string
-  icon: string
+  example: string
+  benefit: string
+  icon?: string
+  color?: string
 }
 
-interface ValuePropositionData {
-  title: string
-  subtitle: string
-  items: ValuePropositionItem[]
-}
-
-const defaultData: ValuePropositionData = {
-  title: "4つの幸せな暮らし",
-  subtitle: "私たちのサービスで実現する理想の生活",
-  items: [
-    {
-      title: "清潔で快適な住環境",
-      description: "プロの技術で隅々まで清潔に。毎日を気持ちよく過ごせる空間を提供します。",
-      icon: "Home",
-    },
-    {
-      title: "時間の有効活用",
-      description: "掃除の時間を家族や趣味の時間に。あなたの大切な時間を取り戻します。",
-      icon: "Clock",
-    },
-    {
-      title: "健康的な生活",
-      description: "アレルゲンやカビを除去し、家族の健康を守る清潔な環境を作ります。",
-      icon: "Heart",
-    },
-    {
-      title: "安心のサポート",
-      description: "経験豊富なスタッフが丁寧に対応。アフターサービスも充実しています。",
-      icon: "Shield",
-    },
-  ],
-}
+const initialValueProps: ValueProp[] = [
+  {
+    title: "最短翌日対応",
+    description: "急な来客にも対応可能。緊急時、受付時間外や当日対応も可（要相談）",
+    example: "金曜の夜、週末の来客が決定。土曜の朝一番で連絡すると、その日の午後には綺麗なお部屋に。",
+    benefit: "急なご要望にも可能な限り対応し、あなたの「困った！」を解決します。",
+    icon: "icon1",
+    color: "color1",
+  },
+  {
+    title: "プロの技術",
+    description: "頑固な汚れも撃退、見違えるほどの清潔さを実現",
+    example: "何年も落ちなかったキッチンの油汚れが、特殊な洗剤と技術であっという間にピカピカに。",
+    benefit: "プロの技術で、諦めていた汚れも解消。新築のような清潔感が復活します。",
+    icon: "icon2",
+    color: "color2",
+  },
+  {
+    title: "総合的なハウスケア、サブスク",
+    description: "忙しい方向けに時間と労力を大幅節約",
+    example: "仕事で忙しい共働き夫婦。帰宅するとベッドメイキングから洗濯物の片付けまで全て完了。",
+    benefit: "家事の負担を軽減し、大切な人との時間や自分の趣味の時間を増やせます。",
+    icon: "icon3",
+    color: "color3",
+  },
+  {
+    title: "アレルギー対策",
+    description: "特殊洗剤使用で、家族の健康をサポート",
+    example: "花粉症の息子さんの症状が、定期的な清掃とエアコンフィルターの徹底洗浄で軽減。",
+    benefit: "アレルギー症状の緩和に貢献し、家族全員が快適に過ごせる空間を作ります。",
+    icon: "icon4",
+    color: "color4",
+  },
+]
 
 export default function ValuePropositionEditor() {
-  const [data, setData] = useState<ValuePropositionData>(defaultData)
-  const [isLoading, setIsLoading] = useState(false)
-  const { toast } = useToast()
+  const [valueProps, setValueProps] = useState<ValueProp[]>(initialValueProps)
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch("/api/update-content?type=valueProposition")
-        const result = await response.json()
-        if (result.success && result.data.length > 0) {
-          const dbData = result.data[0]
-          setData({
-            title: dbData.title,
-            subtitle: dbData.subtitle,
-            items: dbData.items,
-          })
+        const response = await fetch("/api/site-content?section=valueProposition")
+        const data = await response.json()
+        if (data && Array.isArray(data)) {
+          setValueProps(
+            data.map((prop, index) => ({
+              ...prop,
+              icon: initialValueProps[index].icon,
+              color: initialValueProps[index].color,
+            })),
+          )
         }
       } catch (error) {
-        console.error("Error fetching value proposition data:", error)
-        toast({
-          title: "エラー",
-          description: "データの読み込みに失敗しました。",
-          variant: "destructive",
-        })
+        console.error("Error fetching value propositions:", error)
+        // Fallback to localStorage
+        const savedValueProps = localStorage.getItem("valuePropositionContent")
+        if (savedValueProps) {
+          setValueProps(JSON.parse(savedValueProps))
+        }
       }
     }
 
     fetchData()
-  }, [toast])
+  }, [])
 
-  const handleTitleChange = (value: string) => {
-    setData((prev) => ({ ...prev, title: value }))
-  }
-
-  const handleSubtitleChange = (value: string) => {
-    setData((prev) => ({ ...prev, subtitle: value }))
-  }
-
-  const handleItemChange = (index: number, field: keyof ValuePropositionItem, value: string) => {
-    setData((prev) => ({
-      ...prev,
-      items: prev.items.map((item, i) => (i === index ? { ...item, [field]: value } : item)),
-    }))
-  }
-
-  const handleAddItem = () => {
-    setData((prev) => ({
-      ...prev,
-      items: [...prev.items, { title: "", description: "", icon: "Star" }],
-    }))
-  }
-
-  const handleRemoveItem = (index: number) => {
-    setData((prev) => ({
-      ...prev,
-      items: prev.items.filter((_, i) => i !== index),
-    }))
+  const handleChange = (index: number, field: keyof ValueProp, value: string) => {
+    const newValueProps = [...valueProps]
+    newValueProps[index] = { ...newValueProps[index], [field]: value }
+    setValueProps(newValueProps)
   }
 
   const handleSave = async () => {
-    setIsLoading(true)
     try {
-      const response = await fetch("/api/update-content", {
+      const response = await fetch("/api/site-content", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          type: "valueProposition",
-          data: data,
+          section: "valueProposition",
+          content: valueProps,
         }),
       })
 
-      const result = await response.json()
-      if (result.success) {
-        toast({
-          title: "保存完了",
-          description: "4つの幸せな暮らしの内容が正常に保存されました。",
-        })
+      if (response.ok) {
+        // Also save to localStorage as backup
+        localStorage.setItem("valuePropositionContent", JSON.stringify(valueProps))
+        alert("4つの幸せな暮らしの内容が保存されました。")
       } else {
-        throw new Error(result.error || "Save failed")
+        throw new Error("Failed to save")
       }
     } catch (error) {
-      console.error("Error saving value proposition:", error)
-      toast({
-        title: "エラー",
-        description: "データの保存に失敗しました。",
-        variant: "destructive",
-      })
-    } finally {
-      setIsLoading(false)
+      console.error("Error saving value propositions:", error)
+      alert("保存中にエラーが発生しました。")
     }
   }
 
   return (
     <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>4つの幸せな暮らし編集</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <label className="block mb-2 font-medium">タイトル</label>
-            <Input
-              value={data.title}
-              onChange={(e) => handleTitleChange(e.target.value)}
-              placeholder="セクションのタイトル"
-            />
-          </div>
-
-          <div>
-            <label className="block mb-2 font-medium">サブタイトル</label>
-            <Input
-              value={data.subtitle}
-              onChange={(e) => handleSubtitleChange(e.target.value)}
-              placeholder="セクションのサブタイトル"
-            />
-          </div>
-
-          <div>
-            <label className="block mb-2 font-medium">項目</label>
-            {data.items.map((item, index) => (
-              <div key={index} className="border p-4 rounded-lg mb-4">
-                <div className="flex justify-between items-center mb-2">
-                  <h4 className="font-medium">項目 {index + 1}</h4>
-                  <Button variant="destructive" size="sm" onClick={() => handleRemoveItem(index)}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-
-                <div className="space-y-2">
+      <Tabs defaultValue="prop0">
+        <TabsList>
+          {valueProps.map((_, index) => (
+            <TabsTrigger key={index} value={`prop${index}`}>
+              {initialValueProps[index].title}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+        {valueProps.map((prop, index) => (
+          <TabsContent key={index} value={`prop${index}`}>
+            <Card>
+              <CardHeader>
+                <CardTitle>{initialValueProps[index].title}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <label className="block mb-2">タイトル</label>
                   <Input
-                    value={item.title}
-                    onChange={(e) => handleItemChange(index, "title", e.target.value)}
-                    placeholder="項目のタイトル"
+                    value={prop.title}
+                    onChange={(e) => handleChange(index, "title", e.target.value)}
+                    placeholder="タイトル"
                   />
+                </div>
+                <div>
+                  <label className="block mb-2">説明</label>
                   <Textarea
-                    value={item.description}
-                    onChange={(e) => handleItemChange(index, "description", e.target.value)}
-                    placeholder="項目の説明"
+                    value={prop.description}
+                    onChange={(e) => handleChange(index, "description", e.target.value)}
+                    placeholder="説明"
                     rows={3}
                   />
-                  <Input
-                    value={item.icon}
-                    onChange={(e) => handleItemChange(index, "icon", e.target.value)}
-                    placeholder="アイコン名 (Lucide React)"
+                </div>
+                <div>
+                  <label className="block mb-2">お客様の声</label>
+                  <Textarea
+                    value={prop.example}
+                    onChange={(e) => handleChange(index, "example", e.target.value)}
+                    placeholder="お客様の声"
+                    rows={3}
                   />
                 </div>
-              </div>
-            ))}
-
-            <Button variant="outline" onClick={handleAddItem} className="mt-2 bg-transparent">
-              <Plus className="h-4 w-4 mr-2" />
-              項目を追加
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Button onClick={handleSave} disabled={isLoading}>
-        {isLoading ? "保存中..." : "保存"}
-      </Button>
+                <div>
+                  <label className="block mb-2">あなたへの価値</label>
+                  <Textarea
+                    value={prop.benefit}
+                    onChange={(e) => handleChange(index, "benefit", e.target.value)}
+                    placeholder="あなたへの価値"
+                    rows={3}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        ))}
+      </Tabs>
+      <Button onClick={handleSave}>保存</Button>
     </div>
   )
 }

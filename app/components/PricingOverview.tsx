@@ -77,17 +77,31 @@ export default function PricingOverview() {
   const { imageUrls, isLoading, error } = useImageUrls()
 
   useEffect(() => {
-    const savedPricingData = localStorage.getItem("pricingOverviewContent")
-    if (savedPricingData) {
+    const fetchData = async () => {
       try {
-        const parsedData = JSON.parse(savedPricingData)
-        if (Array.isArray(parsedData) && parsedData.length > 0) {
-          setPricingData(parsedData)
+        const response = await fetch("/api/site-content?section=pricingOverview")
+        const data = await response.json()
+        if (data && Array.isArray(data) && data.length > 0) {
+          setPricingData(data)
         }
       } catch (error) {
-        console.error("Error parsing saved pricing data:", error)
+        console.error("Error fetching pricing data:", error)
+        // Fallback to localStorage
+        const savedPricingData = localStorage.getItem("pricingOverviewContent")
+        if (savedPricingData) {
+          try {
+            const parsedData = JSON.parse(savedPricingData)
+            if (Array.isArray(parsedData) && parsedData.length > 0) {
+              setPricingData(parsedData)
+            }
+          } catch (error) {
+            console.error("Error parsing saved pricing data:", error)
+          }
+        }
       }
     }
+
+    fetchData()
   }, [])
 
   if (isLoading) {

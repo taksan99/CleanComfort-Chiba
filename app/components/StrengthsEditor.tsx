@@ -35,10 +35,24 @@ export default function StrengthsEditor() {
   const [strengths, setStrengths] = useState<Strength[]>(initialStrengths)
 
   useEffect(() => {
-    const savedStrengths = localStorage.getItem("strengthsContent")
-    if (savedStrengths) {
-      setStrengths(JSON.parse(savedStrengths))
+    const fetchData = async () => {
+      try {
+        const response = await fetch("/api/site-content?section=strengths")
+        const data = await response.json()
+        if (data && Array.isArray(data)) {
+          setStrengths(data)
+        }
+      } catch (error) {
+        console.error("Error fetching strengths:", error)
+        // Fallback to localStorage
+        const savedStrengths = localStorage.getItem("strengthsContent")
+        if (savedStrengths) {
+          setStrengths(JSON.parse(savedStrengths))
+        }
+      }
     }
+
+    fetchData()
   }, [])
 
   const handleChange = (index: number, field: keyof Strength, value: string) => {
@@ -47,9 +61,29 @@ export default function StrengthsEditor() {
     setStrengths(newStrengths)
   }
 
-  const handleSave = () => {
-    localStorage.setItem("strengthsContent", JSON.stringify(strengths))
-    alert("私たちの強みの内容が保存されました。")
+  const handleSave = async () => {
+    try {
+      const response = await fetch("/api/site-content", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          section: "strengths",
+          content: strengths,
+        }),
+      })
+
+      if (response.ok) {
+        localStorage.setItem("strengthsContent", JSON.stringify(strengths))
+        alert("私たちの強みの内容が保存されました。")
+      } else {
+        throw new Error("Failed to save")
+      }
+    } catch (error) {
+      console.error("Error saving strengths:", error)
+      alert("保存中にエラーが発生しました。")
+    }
   }
 
   return (
@@ -58,7 +92,7 @@ export default function StrengthsEditor() {
         <TabsList>
           {strengths.map((_, index) => (
             <TabsTrigger key={index} value={`strength${index}`}>
-              {initialStrengths[index].title}
+              {strengths[index].title}
             </TabsTrigger>
           ))}
         </TabsList>
@@ -66,7 +100,7 @@ export default function StrengthsEditor() {
           <TabsContent key={index} value={`strength${index}`}>
             <Card>
               <CardHeader>
-                <CardTitle>{initialStrengths[index].title}</CardTitle>
+                <CardTitle>{strengths[index].title}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>

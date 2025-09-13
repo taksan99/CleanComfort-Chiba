@@ -81,10 +81,24 @@ export default function Reviews() {
   const { imageUrls, isLoading, error } = useImageUrls()
 
   useEffect(() => {
-    const savedReviews = localStorage.getItem("reviewsContent")
-    if (savedReviews) {
-      setReviews(JSON.parse(savedReviews))
+    const fetchData = async () => {
+      try {
+        const response = await fetch("/api/site-content?section=reviews")
+        const data = await response.json()
+        if (data && Array.isArray(data)) {
+          setReviews(data)
+        }
+      } catch (error) {
+        console.error("Error fetching reviews:", error)
+        // Fallback to localStorage
+        const savedReviews = localStorage.getItem("reviewsContent")
+        if (savedReviews) {
+          setReviews(JSON.parse(savedReviews))
+        }
+      }
     }
+
+    fetchData()
   }, [])
 
   if (isLoading) {

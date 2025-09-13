@@ -51,10 +51,31 @@ export default function Strengths() {
   const { imageUrls, isLoading, error } = useImageUrls()
 
   useEffect(() => {
-    const savedStrengths = localStorage.getItem("strengthsContent")
-    if (savedStrengths) {
-      setLocalStrengths(JSON.parse(savedStrengths))
+    const fetchData = async () => {
+      try {
+        const response = await fetch("/api/site-content?section=strengths")
+        const data = await response.json()
+        if (data && Array.isArray(data)) {
+          // Map the data to include icons and colors from the initial strengths
+          const mappedStrengths = data.map((strength, index) => ({
+            ...strength,
+            icon: strengths[index]?.icon || strengths[0].icon,
+            color: strengths[index]?.color || strengths[0].color,
+            iconColor: strengths[index]?.iconColor || strengths[0].iconColor,
+          }))
+          setLocalStrengths(mappedStrengths)
+        }
+      } catch (error) {
+        console.error("Error fetching strengths:", error)
+        // Fallback to localStorage
+        const savedStrengths = localStorage.getItem("strengthsContent")
+        if (savedStrengths) {
+          setLocalStrengths(JSON.parse(savedStrengths))
+        }
+      }
     }
+
+    fetchData()
   }, [])
 
   if (isLoading) {
@@ -82,7 +103,7 @@ export default function Strengths() {
         </h2>
         <AnimatedSection>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {strengths.map((strength, index) => (
+            {localStrengths.map((strength, index) => (
               <Card
                 key={index}
                 className={`${strength.color} hover:shadow-lg transition-all duration-300 bg-opacity-90`}

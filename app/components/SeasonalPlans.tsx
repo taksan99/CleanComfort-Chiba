@@ -62,21 +62,41 @@ export default function SeasonalPlans() {
   const { imageUrls, isLoading, error } = useImageUrls()
 
   useEffect(() => {
-    const savedPlans = localStorage.getItem("seasonalPlansContent")
-    if (savedPlans) {
+    const fetchData = async () => {
       try {
-        const parsedPlans = JSON.parse(savedPlans)
-        setPlans(
-          initialSeasonalPlans.map((initialPlan, index) => ({
-            ...initialPlan,
-            title: parsedPlans[index]?.title || initialPlan.title,
-            description: parsedPlans[index]?.description || initialPlan.description,
-          })),
-        )
+        const response = await fetch("/api/site-content?section=seasonalPlans")
+        const data = await response.json()
+        if (data && Array.isArray(data)) {
+          // Map the data to include icons and other properties from initial plans
+          const mappedPlans = data.map((plan, index) => ({
+            ...initialSeasonalPlans[index],
+            title: plan.title,
+            description: plan.description,
+          }))
+          setPlans(mappedPlans)
+        }
       } catch (error) {
-        console.error("Error parsing saved plans:", error)
+        console.error("Error fetching seasonal plans:", error)
+        // Fallback to localStorage
+        const savedPlans = localStorage.getItem("seasonalPlansContent")
+        if (savedPlans) {
+          try {
+            const parsedPlans = JSON.parse(savedPlans)
+            setPlans(
+              initialSeasonalPlans.map((initialPlan, index) => ({
+                ...initialPlan,
+                title: parsedPlans[index]?.title || initialPlan.title,
+                description: parsedPlans[index]?.description || initialPlan.description,
+              })),
+            )
+          } catch (error) {
+            console.error("Error parsing saved plans:", error)
+          }
+        }
       }
     }
+
+    fetchData()
   }, [])
 
   if (isLoading) {

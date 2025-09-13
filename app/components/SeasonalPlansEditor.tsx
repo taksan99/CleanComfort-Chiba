@@ -40,10 +40,24 @@ export default function SeasonalPlansEditor() {
   const [seasonalPlans, setSeasonalPlans] = useState<SeasonalPlan[]>(initialSeasonalPlans)
 
   useEffect(() => {
-    const savedSeasonalPlans = localStorage.getItem("seasonalPlansContent")
-    if (savedSeasonalPlans) {
-      setSeasonalPlans(JSON.parse(savedSeasonalPlans))
+    const fetchData = async () => {
+      try {
+        const response = await fetch("/api/site-content?section=seasonalPlans")
+        const data = await response.json()
+        if (data && Array.isArray(data)) {
+          setSeasonalPlans(data)
+        }
+      } catch (error) {
+        console.error("Error fetching seasonal plans:", error)
+        // Fallback to localStorage
+        const savedSeasonalPlans = localStorage.getItem("seasonalPlansContent")
+        if (savedSeasonalPlans) {
+          setSeasonalPlans(JSON.parse(savedSeasonalPlans))
+        }
+      }
     }
+
+    fetchData()
   }, [])
 
   const handleChange = (index: number, field: keyof SeasonalPlan, value: string) => {
@@ -52,9 +66,29 @@ export default function SeasonalPlansEditor() {
     setSeasonalPlans(newSeasonalPlans)
   }
 
-  const handleSave = () => {
-    localStorage.setItem("seasonalPlansContent", JSON.stringify(seasonalPlans))
-    alert("季節別おすすめプランの内容が保存されました。")
+  const handleSave = async () => {
+    try {
+      const response = await fetch("/api/site-content", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          section: "seasonalPlans",
+          content: seasonalPlans,
+        }),
+      })
+
+      if (response.ok) {
+        localStorage.setItem("seasonalPlansContent", JSON.stringify(seasonalPlans))
+        alert("季節別おすすめプランの内容が保存されました。")
+      } else {
+        throw new Error("Failed to save")
+      }
+    } catch (error) {
+      console.error("Error saving seasonal plans:", error)
+      alert("保存中にエラーが発生しました。")
+    }
   }
 
   return (

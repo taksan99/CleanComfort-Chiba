@@ -62,17 +62,36 @@ export default function ValueProposition() {
   const { imageUrls, isLoading, error } = useImageUrls()
 
   useEffect(() => {
-    const savedValueProps = localStorage.getItem("valuePropositionContent")
-    if (savedValueProps) {
-      const parsedValueProps = JSON.parse(savedValueProps) as ValueProp[]
-      setValueProps(
-        parsedValueProps.map((prop, index) => ({
-          ...prop,
-          icon: initialValueProps[index].icon,
-          color: initialValueProps[index].color,
-        })),
-      )
+    const fetchData = async () => {
+      try {
+        const response = await fetch("/api/site-content?section=valueProposition")
+        const data = await response.json()
+        if (data && Array.isArray(data)) {
+          const mappedValueProps = data.map((prop, index) => ({
+            ...prop,
+            icon: initialValueProps[index]?.icon || initialValueProps[0].icon,
+            color: initialValueProps[index]?.color || initialValueProps[0].color,
+          }))
+          setValueProps(mappedValueProps)
+        }
+      } catch (error) {
+        console.error("Error fetching value propositions:", error)
+        // Fallback to localStorage
+        const savedValueProps = localStorage.getItem("valuePropositionContent")
+        if (savedValueProps) {
+          const parsedValueProps = JSON.parse(savedValueProps) as ValueProp[]
+          setValueProps(
+            parsedValueProps.map((prop, index) => ({
+              ...prop,
+              icon: initialValueProps[index].icon,
+              color: initialValueProps[index].color,
+            })),
+          )
+        }
+      }
     }
+
+    fetchData()
   }, [])
 
   if (isLoading) {

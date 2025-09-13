@@ -44,7 +44,7 @@ const initialFAQs: FAQItem[] = [
       "はい、全スタッフの身元確認を行っており、研修も徹底しています。また、貴重品等は事前にお客様ご自身で管理をお願いしております。",
   },
   {
-    question: "��金体系はどうなっていますか？",
+    question: "金体系はどうなっていますか？",
     answer:
       "各サービスには基本料金が設定されています。例えば、水回り5点セットは68,000円～、通常エアコンクリーニングは12,000円～となっています。ただし、作業の難易度や追加オプションによって料金が変動する場合があります。詳細な料金はお気軽にお問い合わせください。",
   },
@@ -79,10 +79,24 @@ export default function FAQEditor() {
   const [faqs, setFaqs] = useState<FAQItem[]>(initialFAQs)
 
   useEffect(() => {
-    const savedFAQs = localStorage.getItem("faqContent")
-    if (savedFAQs) {
-      setFaqs(JSON.parse(savedFAQs))
+    const fetchData = async () => {
+      try {
+        const response = await fetch("/api/site-content?section=faq")
+        const data = await response.json()
+        if (data && Array.isArray(data)) {
+          setFaqs(data)
+        }
+      } catch (error) {
+        console.error("Error fetching FAQs:", error)
+        // Fallback to localStorage
+        const savedFAQs = localStorage.getItem("faqContent")
+        if (savedFAQs) {
+          setFaqs(JSON.parse(savedFAQs))
+        }
+      }
     }
+
+    fetchData()
   }, [])
 
   const handleChange = (index: number, field: keyof FAQItem, value: string) => {
@@ -101,9 +115,29 @@ export default function FAQEditor() {
     setFaqs(newFAQs)
   }
 
-  const handleSave = () => {
-    localStorage.setItem("faqContent", JSON.stringify(faqs))
-    alert("よくある質問の内容が保存されました。")
+  const handleSave = async () => {
+    try {
+      const response = await fetch("/api/site-content", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          section: "faq",
+          content: faqs,
+        }),
+      })
+
+      if (response.ok) {
+        localStorage.setItem("faqContent", JSON.stringify(faqs))
+        alert("よくある質問の内容が保存されました。")
+      } else {
+        throw new Error("Failed to save")
+      }
+    } catch (error) {
+      console.error("Error saving FAQs:", error)
+      alert("保存中にエラーが発生しました。")
+    }
   }
 
   return (
