@@ -1,64 +1,38 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Check, Calendar, Clock, Star } from "lucide-react"
 
 interface SubscriptionPlan {
   name: string
   price: string
-  period: string
-  description: string
+  frequency: string
+  services: string[]
   features: string[]
-  isPopular?: boolean
+  popular?: boolean
 }
 
 const initialPlans: SubscriptionPlan[] = [
   {
     name: "ベーシックプラン",
-    price: "月額 15,000円",
-    period: "月1回",
-    description: "基本的な清掃サービスを定期的に",
-    features: [
-      "月1回の定期清掃",
-      "水回り清掃（キッチン・浴室・トイレ）",
-      "掃除機がけ・拭き掃除",
-      "ゴミ出し代行",
-      "簡単な整理整頓",
-    ],
+    price: "月額 8,000円",
+    frequency: "月1回",
+    services: ["エアコンクリーニング（年2回）", "簡易清掃"],
+    features: ["優先予約", "10%割引", "無料相談"],
   },
   {
     name: "スタンダードプラン",
-    price: "月額 25,000円",
-    period: "月2回",
-    description: "より充実したサービスで快適な住環境を",
-    features: [
-      "月2回の定期清掃",
-      "水回り清掃（キッチン・浴室・トイレ・洗面台）",
-      "掃除機がけ・拭き掃除・窓拭き",
-      "ゴミ出し代行",
-      "整理整頓・ベッドメイキング",
-      "エアコンフィルター清掃（月1回）",
-    ],
-    isPopular: true,
+    price: "月額 15,000円",
+    frequency: "月2回",
+    services: ["ハウスクリーニング", "水回り清掃", "エアコンクリーニング（年4回）"],
+    features: ["優先予約", "15%割引", "無料相談", "緊急対応"],
+    popular: true,
   },
   {
     name: "プレミアムプラン",
-    price: "月額 40,000円",
-    period: "週1回",
-    description: "最高レベルの清掃とサポートサービス",
-    features: [
-      "週1回の定期清掃",
-      "全室清掃（水回り・リビング・寝室）",
-      "掃除機がけ・拭き掃除・窓拭き",
-      "ゴミ出し代行・洗濯物の取り込み",
-      "整理整頓・ベッドメイキング",
-      "エアコンフィルター清掃（月2回）",
-      "簡単な買い物代行",
-      "植物の水やり",
-    ],
+    price: "月額 25,000円",
+    frequency: "週1回",
+    services: ["フルハウスクリーニング", "水回り清掃", "便利屋サービス", "エアコンクリーニング（年6回）"],
+    features: ["最優先予約", "20%割引", "24時間相談", "緊急対応", "専任スタッフ"],
   },
 ]
 
@@ -78,74 +52,87 @@ export default function Subscription() {
   }, [])
 
   return (
-    <section id="subscription" className="py-20 bg-gradient-to-br from-indigo-50 to-purple-100">
+    <section className="py-20 bg-gradient-to-br from-purple-50 to-blue-50">
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold text-gray-800 mb-4">サブスクリプションサービス</h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            定期的な清掃サービスで、いつでも清潔で快適な住環境を維持できます。
+            定期的なメンテナンスで、いつでも清潔で快適な住環境を維持できます。
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+        <div className="grid lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {plans.map((plan, index) => (
-            <Card
+            <div
               key={index}
-              className={`hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 ${
-                plan.isPopular ? "ring-2 ring-indigo-500 relative" : ""
-              }`}
+              className={`bg-white rounded-lg p-8 shadow-lg relative ${plan.popular ? "ring-2 ring-blue-500" : ""}`}
             >
-              {plan.isPopular && (
-                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                  <Badge className="bg-indigo-500 text-white px-4 py-1">
-                    <Star className="w-4 h-4 mr-1" />
-                    人気No.1
-                  </Badge>
+              {plan.popular && (
+                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                  <span className="bg-blue-500 text-white px-4 py-2 rounded-full text-sm font-semibold">人気No.1</span>
                 </div>
               )}
 
-              <CardHeader className="text-center pb-4">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
-                  <Calendar className="w-8 h-8 text-white" />
-                </div>
-                <CardTitle className="text-2xl font-bold text-gray-800">{plan.name}</CardTitle>
-                <div className="text-3xl font-bold text-indigo-600 mt-2">{plan.price}</div>
-                <div className="flex items-center justify-center text-gray-600 mt-1">
-                  <Clock className="w-4 h-4 mr-1" />
-                  {plan.period}
-                </div>
-                <p className="text-gray-600 mt-2">{plan.description}</p>
-              </CardHeader>
+              <div className="text-center mb-6">
+                <h3 className="text-2xl font-bold text-gray-800 mb-2">{plan.name}</h3>
+                <div className="text-3xl font-bold text-blue-600 mb-1">{plan.price}</div>
+                <p className="text-gray-600">{plan.frequency}</p>
+              </div>
 
-              <CardContent>
-                <ul className="space-y-3 mb-6">
-                  {plan.features.map((feature, featureIndex) => (
-                    <li key={featureIndex} className="flex items-start">
-                      <Check className="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                      <span className="text-gray-700 text-sm">{feature}</span>
+              <div className="mb-6">
+                <h4 className="font-semibold text-gray-800 mb-3">含まれるサービス</h4>
+                <ul className="space-y-2">
+                  {plan.services.map((service, serviceIndex) => (
+                    <li key={serviceIndex} className="flex items-center text-sm text-gray-600">
+                      <svg className="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path
+                          fillRule="evenodd"
+                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      {service}
                     </li>
                   ))}
                 </ul>
+              </div>
 
-                <Button
-                  className={`w-full ${
-                    plan.isPopular ? "bg-indigo-600 hover:bg-indigo-700" : "bg-gray-600 hover:bg-gray-700"
-                  }`}
-                >
-                  プランを選択
-                </Button>
-              </CardContent>
-            </Card>
+              <div className="mb-8">
+                <h4 className="font-semibold text-gray-800 mb-3">特典</h4>
+                <ul className="space-y-2">
+                  {plan.features.map((feature, featureIndex) => (
+                    <li key={featureIndex} className="flex items-center text-sm text-gray-600">
+                      <svg className="w-4 h-4 text-blue-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path
+                          fillRule="evenodd"
+                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <button
+                className={`w-full py-3 px-6 rounded-lg font-semibold transition-colors duration-200 ${
+                  plan.popular
+                    ? "bg-blue-600 text-white hover:bg-blue-700"
+                    : "bg-gray-100 text-gray-800 hover:bg-gray-200"
+                }`}
+              >
+                プランを選択
+              </button>
+            </div>
           ))}
         </div>
 
-        <div className="text-center mt-12">
-          <p className="text-gray-600 mb-4">
-            ※ 初回ご利用時は現地調査が必要です。サービス内容は住環境に応じてカスタマイズ可能です。
+        <div className="mt-12 text-center">
+          <p className="text-gray-600 mb-2">
+            ※サブスクリプションサービスは、単発サービスを一度ご利用いただいた後にお申し込みいただけます。
           </p>
-          <Button size="lg" variant="outline" className="px-8 bg-transparent">
-            詳細なプラン比較を見る
-          </Button>
+          <p className="text-gray-600">※契約期間の縛りはありません。いつでも解約可能です。</p>
         </div>
       </div>
     </section>

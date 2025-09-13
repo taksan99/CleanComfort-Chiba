@@ -1,140 +1,126 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Droplets, Wind, Wrench } from "lucide-react"
 
-export interface PricingCategory {
+interface PricingItem {
   category: string
-  icon: string
-  color: string
-  textColor: string
-  borderColor: string
-  items: { service: string; price: string }[]
+  services: {
+    name: string
+    price: string
+    description: string
+  }[]
 }
 
-const initialPricingData: PricingCategory[] = [
+const initialPricing: PricingItem[] = [
   {
-    category: "掃除サービス",
-    icon: "Droplet",
-    color: "from-blue-500 to-cyan-400",
-    textColor: "text-blue-700",
-    borderColor: "border-blue-500",
-    items: [
-      { service: "水回り5点セット（浴室/キッチン/レンジフード/トイレ/洗面台）", price: "68,000円～" },
-      { service: "浴室、キッチン、レンジフード", price: "20,000円～" },
-      { service: "トイレ", price: "10,000円～" },
-      { service: "ガラス・サッシクリーニング（3枚）", price: "10,000円～" },
-      { service: "ベランダ", price: "6,000円～" },
+    category: "エアコンクリーニング",
+    services: [
+      {
+        name: "通常エアコン",
+        price: "12,000円～",
+        description: "壁掛けタイプの一般的なエアコン",
+      },
+      {
+        name: "お掃除機能付きエアコン",
+        price: "18,000円～",
+        description: "自動清掃機能付きエアコン",
+      },
+      {
+        name: "業務用エアコン",
+        price: "25,000円～",
+        description: "天井埋込み型・業務用エアコン",
+      },
     ],
   },
   {
-    category: "エアコン掃除",
-    icon: "Wind",
-    color: "from-green-500 to-emerald-400",
-    textColor: "text-green-700",
-    borderColor: "border-green-500",
-    items: [
-      { service: "通常エアコンクリーニング", price: "12,000円～" },
-      { service: "お掃除機能付きエアコン", price: "22,000円～" },
-      { service: "ご家庭用埋込式エアコン", price: "25,000円～" },
-      { service: "業務用4方向エアコン", price: "33,000円～" },
-      { service: "室外機", price: "6,000円～" },
+    category: "ハウスクリーニング",
+    services: [
+      {
+        name: "1R・1K",
+        price: "15,000円～",
+        description: "ワンルーム・1Kのお部屋",
+      },
+      {
+        name: "1DK・1LDK",
+        price: "20,000円～",
+        description: "1DK・1LDKのお部屋",
+      },
+      {
+        name: "2LDK以上",
+        price: "30,000円～",
+        description: "2LDK以上のお部屋",
+      },
     ],
   },
   {
-    category: "便利屋さんサービス",
-    icon: "Wrench",
-    color: "from-yellow-500 to-amber-400",
-    textColor: "text-yellow-700",
-    borderColor: "border-yellow-500",
-    items: [
-      { service: "害獣・害虫駆除", price: "10,000円～" },
-      { service: "墓参り代行", price: "10,000円～" },
-      { service: "ペットの世話（1回）", price: "3,000円～" },
-      { service: "友達代行（1時間）", price: "5,000円～" },
-      { service: "庭の手入れ", price: "8,000円～" },
-      { service: "その他、どんなことでも！", price: "要相談" },
+    category: "水回りクリーニング",
+    services: [
+      {
+        name: "キッチン",
+        price: "15,000円～",
+        description: "シンク・コンロ・換気扇込み",
+      },
+      {
+        name: "浴室",
+        price: "18,000円～",
+        description: "浴槽・壁面・床・天井",
+      },
+      {
+        name: "水回り5点セット",
+        price: "68,000円～",
+        description: "キッチン・浴室・トイレ・洗面台・洗濯機",
+      },
     ],
   },
 ]
 
 export default function PricingOverview() {
-  const [pricingData, setPricingData] = useState<PricingCategory[]>(initialPricingData)
+  const [pricing, setPricing] = useState<PricingItem[]>(initialPricing)
 
   useEffect(() => {
-    const savedPricingData = localStorage.getItem("pricingOverviewContent")
-    if (savedPricingData) {
+    const savedPricing = localStorage.getItem("pricingOverviewContent")
+    if (savedPricing) {
       try {
-        const parsedPricingData = JSON.parse(savedPricingData)
-        setPricingData(parsedPricingData)
+        const parsedPricing = JSON.parse(savedPricing)
+        setPricing(parsedPricing)
       } catch (error) {
-        console.error("Error parsing saved pricing data:", error)
+        console.error("Error parsing saved pricing:", error)
       }
     }
   }, [])
 
-  const getIconComponent = (iconName: string) => {
-    switch (iconName) {
-      case "Droplet":
-        return <Droplets className="w-8 h-8 text-blue-600" />
-      case "Wind":
-        return <Wind className="w-8 h-8 text-green-600" />
-      case "Wrench":
-        return <Wrench className="w-8 h-8 text-yellow-600" />
-      default:
-        return <Droplets className="w-8 h-8 text-blue-600" />
-    }
-  }
-
   return (
-    <section id="pricing-overview" className="py-20 bg-gradient-to-br from-gray-50 to-blue-50">
+    <section className="py-20 bg-gray-50">
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold text-gray-800 mb-4">料金体系</h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            明確で分かりやすい料金設定。お客様のニーズに合わせたプランをご用意しています。
+            明確で分かりやすい料金設定で、安心してご利用いただけます。
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8">
-          {pricingData.map((category, index) => (
-            <Card key={index} className="hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
-              <CardHeader className="text-center pb-4">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                  {getIconComponent(category.icon)}
-                </div>
-                <CardTitle className="text-2xl font-bold text-gray-800">{category.category}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {category.items.map((item, itemIndex) => (
-                    <div key={itemIndex} className="flex justify-between items-start p-3 rounded-lg hover:bg-gray-50">
-                      <div className="flex-1 pr-2">
-                        <span className="text-sm text-gray-700 leading-relaxed">{item.service}</span>
-                      </div>
-                      <div className="text-right">
-                        <span className="font-semibold text-gray-800 whitespace-nowrap">{item.price}</span>
-                      </div>
+        <div className="grid lg:grid-cols-3 gap-8">
+          {pricing.map((category, index) => (
+            <div key={index} className="bg-white rounded-lg p-6 shadow-lg">
+              <h3 className="text-2xl font-bold text-gray-800 mb-6 text-center">{category.category}</h3>
+              <div className="space-y-4">
+                {category.services.map((service, serviceIndex) => (
+                  <div key={serviceIndex} className="border-b border-gray-200 pb-4 last:border-b-0">
+                    <div className="flex justify-between items-start mb-2">
+                      <h4 className="font-semibold text-gray-800">{service.name}</h4>
+                      <span className="text-blue-600 font-bold">{service.price}</span>
                     </div>
-                  ))}
-                </div>
-                <div className="mt-6">
-                  <Button className="w-full">詳細を見る</Button>
-                </div>
-              </CardContent>
-            </Card>
+                    <p className="text-sm text-gray-600">{service.description}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
           ))}
         </div>
 
-        <div className="text-center mt-12">
-          <p className="text-gray-600 mb-4">
-            ※ 料金は作業内容や現場の状況により変動する場合があります。詳細はお気軽にお問い合わせください。
-          </p>
-          <Button size="lg" className="px-8">
-            無料見積もりを依頼する
-          </Button>
+        <div className="mt-12 text-center">
+          <p className="text-gray-600 mb-4">※料金は作業内容・汚れの程度により変動する場合があります。</p>
+          <p className="text-gray-600">詳細な料金については、現地調査後にお見積もりをご提示いたします。</p>
         </div>
       </div>
     </section>

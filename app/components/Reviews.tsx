@@ -1,71 +1,47 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent } from "@/components/ui/card"
-import { Star } from "lucide-react"
-import { useImageUrls } from "../hooks/useImageUrls"
 
 interface Review {
   name: string
-  age: number
-  occupation: string
-  comment: string
+  location: string
+  service: string
   rating: number
+  comment: string
 }
 
 const initialReviews: Review[] = [
   {
-    name: "佐藤 美咲",
-    age: 25,
-    occupation: "会社員",
-    comment:
-      "エアコンがピカピカになって、空気がすごく綺麗になりました！　アレルギーも軽減して、快適に過ごせています。気さくな人でよかった。毎年お願いしたいです！",
+    name: "田中様",
+    location: "木更津市",
+    service: "エアコンクリーニング",
     rating: 5,
+    comment: "エアコンがとても綺麗になり、風も清潔になりました。作業も丁寧で満足です。",
   },
   {
-    name: "田中 健太",
-    age: 42,
-    occupation: "自営業",
-    comment:
-      "水回りの掃除をお願いしました。見違えるほどキレイになって大満足です。特にキッチンの油汚れが落ちたのがよかった。老齢の両親のちょっとした世話までしてくれて、嬉しかったです。",
+    name: "佐藤様",
+    location: "君津市",
+    service: "ハウスクリーニング",
     rating: 5,
+    comment: "忙しくて掃除ができずにいましたが、プロの技術で家全体がピカピカになりました。",
   },
   {
-    name: "鈴木 優子",
-    age: 29,
-    occupation: "主婦",
-    comment:
-      "急な来客の前日に依頼したのに、迅速な対応をしていただき本当に助かりました。仕上がりも素晴らしく、友人にも褒められました。",
+    name: "山田様",
+    location: "富津市",
+    service: "水回りクリーニング",
     rating: 5,
+    comment: "キッチンとお風呂の頑固な汚れが完全に取れて驚きました。また利用したいです。",
   },
   {
-    name: "佐伯 真一",
-    age: 56,
-    occupation: "会社役員",
-    comment:
-      "両親の墓参り代行をお願いしました。丁寧に清掃しお花も供えていただき、素晴らしかったです。遠方に住んでいる身としては心強いサービスですね。",
+    name: "鈴木様",
+    location: "袖ケ浦市",
+    service: "便利屋サービス",
     rating: 5,
-  },
-  {
-    name: "中村 瑠璃子",
-    age: 33,
-    occupation: "フリーランス",
-    comment:
-      "突然のネズミ発生で困っていましたが、すぐに対応してくださいました。駆除だけでなく、予防対策まで丁寧に説明していただき、安心して生活できるようになりました。",
-    rating: 5,
-  },
-  {
-    name: "小林 浩一郎",
-    age: 31,
-    occupation: "会社員",
-    comment:
-      "思い切って友達代行、カラオケに同伴してもらいました。とても楽しくストレス発散できました！　普段一人で行くのは気が引けていたので、良い経験になりました！",
-    rating: 5,
+    comment: "家具の移動から電球交換まで、何でも対応してくれて助かりました。",
   },
 ]
 
 export default function Reviews() {
-  const { imageUrls } = useImageUrls()
   const [reviews, setReviews] = useState<Review[]>(initialReviews)
 
   useEffect(() => {
@@ -80,43 +56,42 @@ export default function Reviews() {
     }
   }, [])
 
+  const renderStars = (rating: number) => {
+    return Array.from({ length: 5 }, (_, index) => (
+      <svg
+        key={index}
+        className={`w-5 h-5 ${index < rating ? "text-yellow-400" : "text-gray-300"}`}
+        fill="currentColor"
+        viewBox="0 0 20 20"
+      >
+        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+      </svg>
+    ))
+  }
+
   return (
-    <section id="reviews" className="py-20 bg-gradient-to-br from-yellow-50 to-orange-100">
+    <section className="py-20 bg-white">
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold text-gray-800 mb-4">お客様の声</h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            実際にサービスをご利用いただいたお客様からの嬉しいお声をご紹介します。
+            実際にご利用いただいたお客様からの嬉しいお声をご紹介します。
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
           {reviews.map((review, index) => (
-            <Card key={index} className="hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
-              <CardContent className="p-6">
-                <div className="flex items-center mb-4">
-                  <img
-                    src={imageUrls[`review${index || "/placeholder.svg"}`]?.url || "/placeholder.svg"}
-                    alt={review.name}
-                    className="w-12 h-12 rounded-full mr-4 object-cover"
-                  />
-                  <div>
-                    <h3 className="font-semibold text-gray-800">{review.name}</h3>
-                    <p className="text-sm text-gray-600">
-                      {review.age}歳 / {review.occupation}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex mb-4">
-                  {[...Array(review.rating)].map((_, i) => (
-                    <Star key={i} className="w-5 h-5 text-yellow-400 fill-current" />
-                  ))}
-                </div>
-
-                <p className="text-gray-700 text-sm leading-relaxed italic">"{review.comment}"</p>
-              </CardContent>
-            </Card>
+            <div key={index} className="bg-gray-50 rounded-lg p-6">
+              <div className="flex items-center mb-4">
+                <div className="flex">{renderStars(review.rating)}</div>
+              </div>
+              <p className="text-gray-600 mb-4 italic">"{review.comment}"</p>
+              <div className="border-t pt-4">
+                <p className="font-semibold text-gray-800">{review.name}</p>
+                <p className="text-sm text-gray-600">{review.location}</p>
+                <p className="text-sm text-blue-600">{review.service}</p>
+              </div>
+            </div>
           ))}
         </div>
       </div>

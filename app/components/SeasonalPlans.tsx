@@ -1,103 +1,96 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Flower, Sun, Leaf, Snowflake } from "lucide-react"
-import { useImageUrls } from "../hooks/useImageUrls"
 
 interface SeasonalPlan {
   season: string
   title: string
   description: string
+  services: string[]
+  price: string
 }
 
-const initialSeasonalPlans: SeasonalPlan[] = [
+const initialPlans: SeasonalPlan[] = [
   {
     season: "春",
-    title: "花粉対策セット",
-    description: "エアコン＋換気扇クリーニング",
+    title: "春の新生活応援プラン",
+    description: "新生活のスタートに最適な清掃サービスをお得なセットでご提供",
+    services: ["エアコンクリーニング", "ハウスクリーニング", "窓ガラス清掃"],
+    price: "25,000円～",
   },
   {
     season: "夏",
-    title: "猛暑対策プラン",
-    description: "エアコン全台クリーニング または 浴室クリーニング",
+    title: "夏の快適生活プラン",
+    description: "暑い夏を快適に過ごすためのエアコン重点清掃プラン",
+    services: ["エアコン徹底洗浄", "水回りクリーニング", "カビ対策"],
+    price: "30,000円～",
   },
   {
     season: "秋",
-    title: "寒さ対策セット",
-    description: "エアコン＋窓ガラスクリーニング",
+    title: "秋の大掃除プラン",
+    description: "年末前の準備として、お家全体をしっかりと清掃",
+    services: ["全室清掃", "換気扇清掃", "床ワックス"],
+    price: "35,000円～",
   },
   {
     season: "冬",
-    title: "大掃除応援パック",
-    description: "エアコン＋リビングクリーニング（床清掃・ワックスがけ）",
+    title: "冬の年末大掃除プラン",
+    description: "新年を気持ちよく迎えるための徹底清掃サービス",
+    services: ["大掃除フルセット", "水回り5点セット", "エアコンクリーニング"],
+    price: "50,000円～",
   },
 ]
 
 export default function SeasonalPlans() {
-  const { imageUrls } = useImageUrls()
-  const [seasonalPlans, setSeasonalPlans] = useState<SeasonalPlan[]>(initialSeasonalPlans)
+  const [plans, setPlans] = useState<SeasonalPlan[]>(initialPlans)
 
   useEffect(() => {
-    const savedSeasonalPlans = localStorage.getItem("seasonalPlansContent")
-    if (savedSeasonalPlans) {
+    const savedPlans = localStorage.getItem("seasonalPlansContent")
+    if (savedPlans) {
       try {
-        const parsedSeasonalPlans = JSON.parse(savedSeasonalPlans)
-        setSeasonalPlans(parsedSeasonalPlans)
+        const parsedPlans = JSON.parse(savedPlans)
+        setPlans(parsedPlans)
       } catch (error) {
         console.error("Error parsing saved seasonal plans:", error)
       }
     }
   }, [])
 
-  const seasonIcons = {
-    春: Flower,
-    夏: Sun,
-    秋: Leaf,
-    冬: Snowflake,
-  }
-
-  const seasonColors = {
-    春: "from-pink-500 to-rose-400",
-    夏: "from-yellow-500 to-orange-400",
-    秋: "from-orange-500 to-red-400",
-    冬: "from-blue-500 to-cyan-400",
-  }
-
   return (
-    <section id="seasonal-plans" className="py-20 bg-gradient-to-br from-purple-50 to-pink-100">
+    <section className="py-20 bg-gradient-to-br from-green-50 to-blue-50">
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold text-gray-800 mb-4">季節別おすすめプラン</h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            季節に合わせた最適なクリーニングプランをご提案します。
-          </p>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">季節に合わせた最適な清掃プランをご用意しています。</p>
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {seasonalPlans.map((plan, index) => {
-            const IconComponent = seasonIcons[plan.season as keyof typeof seasonIcons] || Flower
-            const colorClass = seasonColors[plan.season as keyof typeof seasonColors] || "from-gray-500 to-gray-400"
-
-            return (
-              <Card key={index} className="hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
-                <CardHeader className="text-center pb-4">
-                  <div
-                    className={`w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br ${colorClass} flex items-center justify-center`}
-                  >
-                    <IconComponent className="w-8 h-8 text-white" />
-                  </div>
-                  <CardTitle className="text-xl font-bold text-gray-800">{plan.season}のおすすめ</CardTitle>
-                </CardHeader>
-                <CardContent className="text-center">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-3">{plan.title}</h3>
-                  <p className="text-gray-600 mb-6 text-sm leading-relaxed">{plan.description}</p>
-                  <Button className="w-full">詳細を見る</Button>
-                </CardContent>
-              </Card>
-            )
-          })}
+          {plans.map((plan, index) => (
+            <div key={index} className="bg-white rounded-lg p-6 hover:shadow-lg transition-shadow duration-300">
+              <div className="text-center mb-4">
+                <span className="inline-block bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-semibold">
+                  {plan.season}
+                </span>
+              </div>
+              <h3 className="text-xl font-bold text-gray-800 mb-3">{plan.title}</h3>
+              <p className="text-gray-600 mb-4">{plan.description}</p>
+              <div className="text-2xl font-bold text-blue-600 mb-4">{plan.price}</div>
+              <ul className="space-y-2">
+                {plan.services.map((service, serviceIndex) => (
+                  <li key={serviceIndex} className="flex items-center text-sm text-gray-600">
+                    <svg className="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                      <path
+                        fillRule="evenodd"
+                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    {service}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
       </div>
     </section>

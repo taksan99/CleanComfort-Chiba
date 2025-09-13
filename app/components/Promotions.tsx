@@ -1,50 +1,48 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Gift, Users } from "lucide-react"
 
-interface PromotionCard {
-  id: string
+interface Promotion {
   title: string
   description: string
   discount: string
-  note?: string
-  startDate: string
-  endDate: string
-  isActive: boolean
-  variant: "A" | "B"
+  conditions: string
+  validUntil: string
 }
 
-const initialPromotions: PromotionCard[] = [
+const initialPromotions: Promotion[] = [
   {
-    id: "1",
-    title: "紹介キャンペーン",
-    description: "お知り合いをご紹介いただくと、次回のご利用時に",
-    discount: "10% OFF",
-    note: "※ 紹介されたお客様が実際にサービスをご利用された場合に適用されます。",
-    startDate: "2023-01-01",
-    endDate: "2025-12-31",
-    isActive: true,
-    variant: "A",
+    title: "初回利用特典",
+    description: "初めてご利用のお客様限定の特別価格",
+    discount: "20%OFF",
+    conditions: "全サービス対象（一部除く）",
+    validUntil: "期限なし",
   },
   {
-    id: "2",
+    title: "セット割引",
+    description: "複数サービスをまとめてご利用でお得",
+    discount: "最大30%OFF",
+    conditions: "2サービス以上同時利用",
+    validUntil: "通年",
+  },
+  {
     title: "リピーター特典",
-    description: "年2回以上ご利用いただくと、2回目以降のご利用時に",
-    discount: "5% OFF",
-    startDate: "2023-01-01",
-    endDate: "2025-12-31",
-    isActive: true,
-    variant: "A",
+    description: "2回目以降のご利用でさらにお得",
+    discount: "15%OFF",
+    conditions: "前回利用から6ヶ月以内",
+    validUntil: "通年",
+  },
+  {
+    title: "季節限定キャンペーン",
+    description: "季節に合わせた特別プラン",
+    discount: "特別価格",
+    conditions: "季節プラン限定",
+    validUntil: "各季節末まで",
   },
 ]
 
 export default function Promotions() {
-  const [promotions, setPromotions] = useState<PromotionCard[]>(initialPromotions)
-  const [campaignText, setCampaignText] = useState("最大50%OFF！　春のお掃除キャンペーン実施中！")
+  const [promotions, setPromotions] = useState<Promotion[]>(initialPromotions)
 
   useEffect(() => {
     const savedPromotions = localStorage.getItem("promotionsContent")
@@ -56,58 +54,47 @@ export default function Promotions() {
         console.error("Error parsing saved promotions:", error)
       }
     }
-
-    const savedCampaignText = localStorage.getItem("promotionsCampaignText")
-    if (savedCampaignText) {
-      setCampaignText(savedCampaignText)
-    }
   }, [])
 
-  // アクティブなプロモーションのみを表示
-  const activePromotions = promotions.filter((promotion) => promotion.isActive)
-
   return (
-    <section id="promotions" className="py-20 bg-gradient-to-br from-red-50 to-pink-100">
+    <section className="py-20 bg-gradient-to-br from-red-50 to-pink-50">
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold text-gray-800 mb-4">お得な特典</h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            お客様への感謝を込めて、様々な特典をご用意しています。
+            様々な特典をご用意して、お客様のご利用をお待ちしています。
           </p>
-
-          {campaignText && (
-            <div className="mt-8 p-4 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg shadow-lg">
-              <p className="text-lg font-bold">{campaignText}</p>
-            </div>
-          )}
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-          {activePromotions.map((promotion, index) => (
-            <Card
-              key={promotion.id}
-              className="hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2"
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+          {promotions.map((promotion, index) => (
+            <div
+              key={index}
+              className="bg-white rounded-lg p-6 shadow-lg hover:shadow-xl transition-shadow duration-300"
             >
-              <CardHeader className="text-center pb-4">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-red-500 to-pink-600 flex items-center justify-center">
-                  {promotion.title.includes("紹介") ? (
-                    <Users className="w-8 h-8 text-white" />
-                  ) : (
-                    <Gift className="w-8 h-8 text-white" />
-                  )}
-                </div>
-                <CardTitle className="text-2xl font-bold text-gray-800">{promotion.title}</CardTitle>
-              </CardHeader>
-              <CardContent className="text-center">
-                <p className="text-gray-600 mb-4">{promotion.description}</p>
-                <Badge variant="destructive" className="text-2xl font-bold py-2 px-4 mb-4">
+              <div className="text-center mb-4">
+                <span className="inline-block bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-semibold">
                   {promotion.discount}
-                </Badge>
-                {promotion.note && <p className="text-sm text-gray-500 mb-6">{promotion.note}</p>}
-                <Button className="w-full">詳細を見る</Button>
-              </CardContent>
-            </Card>
+                </span>
+              </div>
+              <h3 className="text-xl font-bold text-gray-800 mb-3 text-center">{promotion.title}</h3>
+              <p className="text-gray-600 mb-4">{promotion.description}</p>
+              <div className="space-y-2 text-sm">
+                <div>
+                  <span className="font-semibold text-gray-700">条件：</span>
+                  <span className="text-gray-600">{promotion.conditions}</span>
+                </div>
+                <div>
+                  <span className="font-semibold text-gray-700">有効期限：</span>
+                  <span className="text-gray-600">{promotion.validUntil}</span>
+                </div>
+              </div>
+            </div>
           ))}
+        </div>
+
+        <div className="mt-12 text-center">
+          <p className="text-gray-600">※特典の併用はできません。詳細はお問い合わせください。</p>
         </div>
       </div>
     </section>

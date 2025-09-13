@@ -1,30 +1,33 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent } from "@/components/ui/card"
-import { Clock, Users, Leaf, MapPin } from "lucide-react"
 
 interface Strength {
   title: string
   description: string
+  icon: string
 }
 
 const initialStrengths: Strength[] = [
   {
-    title: "翌日対応、365日対応",
-    description: "お急ぎの方も安心。年中無休でサービスを提供しています。",
+    title: "豊富な経験と実績",
+    description: "千葉県内で多数のお客様にご利用いただき、確かな技術と信頼を築いてきました。",
+    icon: "🏆",
   },
   {
-    title: "経験豊富なプロのスタッフ",
-    description: "熟練のスタッフが丁寧に作業いたします。",
+    title: "丁寧な作業",
+    description: "お客様の大切なお住まいを扱う責任を持ち、細部まで丁寧に作業いたします。",
+    icon: "✨",
   },
   {
-    title: "エコフレンドリーな洗剤使用",
-    description: "環境と健康に配慮した安全な洗剤を使用しています。",
+    title: "適正価格",
+    description: "高品質なサービスを適正な価格でご提供し、お客様にご満足いただいています。",
+    icon: "💰",
   },
   {
-    title: "地域密着で安心",
-    description: "千葉県の地域事情を熟知したスタッフが対応します。",
+    title: "アフターサポート",
+    description: "作業後のフォローアップも充実。何かご不明な点があればお気軽にご相談ください。",
+    icon: "🤝",
   },
 ]
 
@@ -43,33 +46,24 @@ export default function Strengths() {
     }
   }, [])
 
-  const icons = [Clock, Users, Leaf, MapPin]
-
   return (
-    <section id="strengths" className="py-20 bg-gradient-to-br from-green-50 to-emerald-100">
+    <section className="py-20 bg-white">
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold text-gray-800 mb-4">私たちの強み</h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            クリーンコンフォート千葉が選ばれる理由をご紹介します。
-          </p>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">お客様に選ばれ続ける理由をご紹介します。</p>
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {strengths.map((strength, index) => {
-            const IconComponent = icons[index]
-            return (
-              <Card key={index} className="hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
-                <CardContent className="p-6 text-center">
-                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
-                    <IconComponent className="w-8 h-8 text-white" />
-                  </div>
-                  <h3 className="text-xl font-bold text-gray-800 mb-3">{strength.title}</h3>
-                  <p className="text-gray-600 text-sm leading-relaxed">{strength.description}</p>
-                </CardContent>
-              </Card>
-            )
-          })}
+          {strengths.map((strength, index) => (
+            <div key={index} className="text-center">
+              <div className="bg-blue-100 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4">
+                <span className="text-3xl">{strength.icon}</span>
+              </div>
+              <h3 className="text-xl font-bold text-gray-800 mb-3">{strength.title}</h3>
+              <p className="text-gray-600">{strength.description}</p>
+            </div>
+          ))}
         </div>
       </div>
     </section>

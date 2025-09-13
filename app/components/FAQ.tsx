@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 
 interface FAQItem {
   question: string
@@ -72,6 +71,7 @@ const initialFAQs: FAQItem[] = [
 
 export default function FAQ() {
   const [faqs, setFaqs] = useState<FAQItem[]>(initialFAQs)
+  const [activeIndex, setActiveIndex] = useState<number | null>(null)
 
   useEffect(() => {
     const savedFAQs = localStorage.getItem("faqContent")
@@ -85,6 +85,10 @@ export default function FAQ() {
     }
   }, [])
 
+  const toggleFAQ = (index: number) => {
+    setActiveIndex(activeIndex === index ? null : index)
+  }
+
   return (
     <section id="faq" className="py-20 bg-gradient-to-br from-gray-50 to-blue-50">
       <div className="container mx-auto px-4">
@@ -94,18 +98,33 @@ export default function FAQ() {
         </div>
 
         <div className="max-w-4xl mx-auto">
-          <Accordion type="single" collapsible className="space-y-4">
+          <div className="space-y-4">
             {faqs.map((faq, index) => (
-              <AccordionItem key={index} value={`item-${index}`} className="bg-white rounded-lg shadow-sm">
-                <AccordionTrigger className="px-6 py-4 text-left hover:no-underline">
-                  <span className="font-semibold text-gray-800">{faq.question}</span>
-                </AccordionTrigger>
-                <AccordionContent className="px-6 pb-4">
-                  <p className="text-gray-600 leading-relaxed">{faq.answer}</p>
-                </AccordionContent>
-              </AccordionItem>
+              <div key={index} className="bg-white rounded-lg shadow-sm border">
+                <button
+                  className="w-full px-6 py-4 text-left font-semibold text-gray-800 hover:bg-gray-50 transition-colors duration-200 flex justify-between items-center"
+                  onClick={() => toggleFAQ(index)}
+                >
+                  <span>{faq.question}</span>
+                  <svg
+                    className={`w-5 h-5 transform transition-transform duration-200 ${
+                      activeIndex === index ? "rotate-180" : ""
+                    }`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {activeIndex === index && (
+                  <div className="px-6 pb-4">
+                    <p className="text-gray-600 leading-relaxed">{faq.answer}</p>
+                  </div>
+                )}
+              </div>
             ))}
-          </Accordion>
+          </div>
         </div>
       </div>
     </section>
