@@ -7,6 +7,10 @@ CREATE TABLE IF NOT EXISTS site_content (
     updated_at TIMESTAMP DEFAULT NOW()
 );
 
+-- インデックスの作成
+CREATE INDEX IF NOT EXISTS idx_site_content_section ON site_content(section);
+CREATE INDEX IF NOT EXISTS idx_site_content_updated_at ON site_content(updated_at);
+
 -- 初期データの挿入
 INSERT INTO site_content (section, content) VALUES
 ('services', '[
@@ -16,10 +20,11 @@ INSERT INTO site_content (section, content) VALUES
         "items": [
             {"name": "水回り5点セット", "icon": "🚰", "desc": "68,000円～ 洗面所・キッチン・浴室・トイレ・洗濯機周り"},
             {"name": "キッチン", "icon": "🍳", "desc": "20,000円～ レンジフード・コンロ・シンク"},
-            {"name": "浴室", "icon": "🛁", "desc": "20,000円～ 床・壁・天井・鏡・蛇口"},
+            {"name": "浴室", "icon": "🛁", "desc": "20,000円～ 床・壁・天井・鏡・蛇口（エプロン内部クリーニング+5,000円）"},
             {"name": "トイレ", "icon": "🚽", "desc": "10,000円～ 便器・床・壁・換気扇"},
             {"name": "ガラス・サッシ", "icon": "🪟", "desc": "10,000円～ 窓3枚・網戸・サッシレール"},
-            {"name": "ベランダ", "icon": "🏠", "desc": "6,000円～ 床・手すり・排水口"}
+            {"name": "ベランダ", "icon": "🏠", "desc": "6,000円～ 床・手すり・排水口"},
+            {"name": "ワックスがけ", "icon": "✨", "desc": "戸建て：5,000円～、アパート：4,000円～"}
         ],
         "features": [
             "頑固な水垢や油汚れも徹底除去",
@@ -37,6 +42,7 @@ INSERT INTO site_content (section, content) VALUES
             {"name": "お掃除機能付き", "icon": "🤖", "desc": "22,000円～ 自動お掃除機能付きエアコン"},
             {"name": "埋込式エアコン", "icon": "🏠", "desc": "25,000円～ ご家庭用天井埋込タイプ"},
             {"name": "業務用エアコン", "icon": "🏢", "desc": "33,000円～ 4方向タイプ"},
+            {"name": "ワイドエアコン", "icon": "📏", "desc": "28,000円～ 横に広いタイプ（業務用など）"},
             {"name": "室外機", "icon": "🌡️", "desc": "6,000円～ 室外機のみのクリーニング"}
         ],
         "features": [
@@ -57,6 +63,7 @@ INSERT INTO site_content (section, content) VALUES
             {"name": "ペットの世話", "icon": "🐾", "desc": "餌やり・散歩・トイレ清掃など"},
             {"name": "友達代行", "icon": "🤝", "desc": "イベント参加・話し相手など"},
             {"name": "庭の手入れ", "icon": "🌳", "desc": "草刈り・剪定・除草"},
+            {"name": "水道・トイレのつまり", "icon": "🚽", "desc": "軽度：7,000円～、中程度～重度：30,000円～、夜間対応：50,000円～"},
             {"name": "その他", "icon": "🌟", "desc": "日常のお困りごとをお気軽にご相談ください"}
         ],
         "features": [
